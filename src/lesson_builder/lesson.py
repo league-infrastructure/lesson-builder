@@ -252,7 +252,7 @@ class LessonPlan:
 
         assets_dir = self.web_src_dir / '.vuepress/public/assets'
         if not assets_dir.exists():
-            assets_dir.mkdir()
+            assets_dir.mkdir(parents=True)
 
         for resource in self.lesson_plan['resources']:
             res_file = self.less_plan_dir / 'assets' / resource
