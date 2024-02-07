@@ -72,7 +72,6 @@ jtl -vv build -l lessons/PythonLessons/Level0/HourOfPython -d docs -a assignment
 ```
 This shoudl result in lesson pages in `docs/src/lessons`
 
-```bash
 Run the development server. This assumes that the website is in the `docs` directory
     
 ```bash
