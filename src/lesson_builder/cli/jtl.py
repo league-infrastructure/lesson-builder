@@ -6,17 +6,24 @@ __copyright__ = "Eric Busboom"
 __license__ = "MIT"
 
 import logging
-import click
-from pathlib import Path
-from lesson_builder.lesson import LessonPlan
-from lesson_builder.lesson import logger as lesson_logger
 import os
+from pathlib import Path
+
+import click
 from plumbum import local, FG
 from plumbum.cmd import yarn, git
 from plumbum.commands.processes import ProcessExecutionError
+from slugify import slugify
+
+from lesson_builder.lesson import LessonPlan
+from lesson_builder.lesson import logger as lesson_logger
+from lesson_builder.util import download_and_extract_zip
 
 logger = logging.getLogger(__name__)
 
+
+assignment_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/assignment_template.zip'
+lesson_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/lesson_template.zip'
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
@@ -70,7 +77,7 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
 @click.option('-l', '--lesson', 'lesson_path', help='Path to the lesson plan directory')
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 @click.option('-a', '--assignments', 'assignments_path', help='Path to the assignments directory')
-@click.option('-b', '--url_base', 'url_base', default = None,
+@click.option('-b', '--url_base', 'url_base', default=None,
               help='Set the basedir for the url, often needed '
                    'for Github pages. Defaults to name of repository. Use "/" for root.')
 def build(lesson_path: str = None, docs_path=None, assignments_path=None, url_base=None):
@@ -88,7 +95,7 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None, url_ba
 
     if url_base is None or url_base is False:
         origin_url = git('remote', 'get-url', 'origin').strip()
-        url_base =Path(origin_url).stem
+        url_base = Path(origin_url).stem
         logger.info(f"Using url base '{url_base}'")
     elif url_base == '/':
         url_base = None
@@ -147,6 +154,40 @@ def serve(docs_path=None):
 
     with local.cwd(docs_path):
         yarn['dev'] & FG
+
+
+@main.group(help='create new lesson plans and assignments')
+def new():
+    pass
+
+
+@new.command(name='plan', help="Create a new lesson plan")
+@click.option('--count', default=1, help='number of greetings')
+@click.argument('name')
+def new_lessonplan(name: str):
+
+    title = slugify(name, separator='_')
+
+    print("New Lesson Plan", title)
+
+    if Path(title).exists():
+        raise FileExistsError(f"Lesson {title} already exists")
+
+    download_and_extract_zip(lesson_template_url, title)
+
+@new.command(name='assignment', help="Create a new assignment")
+@click.argument('name')
+def new_assignment(name: str):
+
+    title = slugify(name, separator='_')
+
+    print("New Assignment",title)
+
+    if Path(title).exists():
+        raise FileExistsError(f"Assignment {title} already exists")
+
+    download_and_extract_zip(assignment_template_url, title)
+
 
 
 if __name__ == '__main__':

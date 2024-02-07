@@ -19,7 +19,7 @@ def get_assignment(path):
     """Read an assignment and construct a dict of the important information"""
 
     path = Path(path)
-    meta_path = path / '.assignment.yaml'
+    meta_path = path / '_assignment.yaml'
 
     if not meta_path.exists():
         return {}
