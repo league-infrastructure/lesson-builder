@@ -21,50 +21,88 @@ TBD, but here is what a lesson plan directory looks like:
 
 ## Setup and run 
 
+### Install the lesson builder program and vuepress
+
 Install the lesson plan program 
+
 ```bash 
-pip ihttps://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
+python -mvenv .venv
+source .venv/bin/activate
+pip install https://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
 ```
 
-Install vuepress, [see these instructions for details. ](https://vuepress.vuejs.org/guide/getting-started.html). Then create a new vuepress project:
+Install vuepress, [see these instructions for details](https://vuepress.vuejs.org/guide/getting-started.html). 
+in this example, we will be using `yarn` rather than `npm` to install vuepress.
+
+### Prepare a lesson repo
+
+First, create a new repo and clone it. Then create a new vuepress project in 
+the Git repo. 
+
+If you want to deploy to github pages with `jtl deploy`, the `doc` directory
+( which is the default for `yarn create vuepress-site`) must be in a repo that 
+has an origin at Github. If you aren't going to deploy -- for example, if you
+just want to develop locally -- they you can create the vuepress site anywhere.
 
 ```bash
 yarn create vuepress-site && (cd docs && yarn install)
 ```
+You can also just [use the LevelX repo template](), which has the `docs` directory
+already configured for vuepress. 
 
-If you want to deploy to github pages with `jtl deploy`, the `doc` directory must be in a repo that has an 
-origin at Github. 
-
-
-Get a lesson plan repo from github, or create a new one. 
+```bash
 
 
+### Fetch source lessons and assignment
+
+Get some lessons plans. You can get them from anywhere, or make a new one, but
+in this example we will use the League lessons repo.We also need some 
+assignments, so get those too. 
+
+```bash
+(mkdir -p lessons && cd lessons &&  git clone https://github.com/league-python/PythonLessons.git )
+(mkdir -p assignments && cd assignments && git clone https://github.com/League-central/python-modules.git)
+```
+Now we can build the lessons plans into a website. 
+
+### Build and Serve
+
+```bash
+jtl -vv build -l lessons/PythonLessons/Level0/HourOfPython -d docs -a assignments
+```
+This shoudl result in lesson pages in `docs/src/lessons`
+
+```bash
 Run the development server. This assumes that the website is in the `docs` directory
     
 ```bash
 ./jtl serve
 ```
 
-
-Build new pages from the lesson-plan.yml file
-
-```bash
-jtl -vv build -l lessons -d docs -a ~/proj/league-projects/curriculum/
-```
-
-
-Deploy the site to github pages. Note that deploy will only work if the `docs` directory is in a github repo, and the repo is set to produce web pages from the root of the gh-pages branch
+Deploy the site to github pages. Note that deploy will only work if the `docs` 
+directory is in a github repo, and the repo is set to produce web pages from
+the root of the gh-pages branch
 
 ```bash
 ./jtl deploy
 ```
 
+NOTE: the `base:` key in the lessons plan `config.yml` file  must be the directory 
+below the doman in the URL of your Github page, so if the repo name is 
+'Level0', then `config.yaml` must have `base: /Level0/`. This will be set
+autmatically ig you are in a github repo.
 
-NOTE: the `base:` key in the lessons plan `config.yml` file  must be the directory below the doman in the URL of your Github page, so if the repo name is 'Level0', then `config.yaml` must have `base: /Level0/`
+If you get a bunch of nasty errors during deploy, you may need to work around 
+a budgwith OpenSSL and Node 17:
 
-
-If you get a bunch of nasty errors, you may need to work around a bud with OpenSSL and Node 17:
-
-``bash
+```bash
 NODE_OPTIONS=--openssl-legacy-provider ./jtl deploy
 ```
+
+### Configure Github pages
+
+To setup Github pages, go to the settings tab of the repo, select the "Pages"
+section. Set the source to the `gh-pages` branch, and the directory to `/`.
+
+Wait about 5 minutes, and reload the settings page. When your site is ready, 
+you will see a URL at the top of the page.
