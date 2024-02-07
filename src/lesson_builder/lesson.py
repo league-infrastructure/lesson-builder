@@ -219,7 +219,7 @@ class LessonPlan:
         for lesson_key, lesson in self.lesson_plan['lessons'].items():
             yield Lesson(self, lesson)
 
-    def update_config(self, root_dir):
+    def update_config(self, root_dir, basedir=None):
         """Generate the config file for viuepress"""
 
         lp = self.lesson_plan
@@ -230,12 +230,21 @@ class LessonPlan:
         config['title'] = lp['title']
         config['description'] = lp['description']
 
+        if basedir:
+            config['base'] = '/'+basedir.strip('/')+'/'
+
         # config output file for vuepress
         config_file =  self.web_src_dir / '.vuepress/config.yml'
 
         config['themeConfig']['sidebar'] = self.make_sidebar(root_dir)
 
         config_file.write_text(yaml.dump(config))
+
+        js_config = self.web_src_dir / '.vuepress/config.js'
+
+        if js_config.exists():
+            js_config.unlink()
+
 
     def write_dir(self, root_dir: Path = None):
         """Write the lesson plan to the root directory
@@ -260,11 +269,12 @@ class LessonPlan:
 
             shutil.copy(res_file, dest_file)
 
-    def build(self, root_dir: Path = None):
+    def build(self, root_dir: Path = None, url_base_dir = None):
         """Write the lesson plan to the root directory
 
         Args:
             root_dir (Path): The root directory to write the lesson to
+            url_base_dir (str): The base directory for the URL
         """
 
         if root_dir is None:
@@ -277,7 +287,7 @@ class LessonPlan:
         for lesson in self.lessons:
             lesson.write_dir(root_dir)
 
-        self.update_config(root_dir)
+        self.update_config(root_dir, url_base_dir)
 
     def make_sidebar(self, root_dir=None):
 

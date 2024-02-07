@@ -1,4 +1,3 @@
-
 # Main entry point for building and reporting on the
 # lesson website.
 
@@ -11,8 +10,13 @@ import click
 from pathlib import Path
 from lesson_builder.lesson import LessonPlan
 from lesson_builder.lesson import logger as lesson_logger
+import os
+from plumbum import local, FG
+from plumbum.cmd import yarn, git
+from plumbum.commands.processes import ProcessExecutionError
 
 logger = logging.getLogger(__name__)
+
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
@@ -27,7 +31,8 @@ def main(verbose: bool, debug: bool):
         logger.setLevel(logging.INFO)
         lesson_logger.setLevel(logging.INFo)
 
-def check_dirs(lesson_path: str = None, docs_path = None, assignments_path = None):
+
+def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
     if lesson_path is None:
         lesson_path = Path.cwd() / 'lessons'
 
@@ -58,14 +63,17 @@ def check_dirs(lesson_path: str = None, docs_path = None, assignments_path = Non
     if not assignments_path / 'lesson-plan.yaml':
         raise FileNotFoundError(f"Lesson plan 'lesson-plan.yaml' not found in {lesson_path}")
 
-
     return lesson_path, docs_path, assignments_path
+
 
 @main.command(help="Build the website from the lesson plan")
 @click.option('-l', '--lesson', 'lesson_path', help='Path to the lesson plan directory')
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 @click.option('-a', '--assignments', 'assignments_path', help='Path to the assignments directory')
-def build(lesson_path: str = None, docs_path = None, assignments_path = None):
+@click.option('-b', '--url_base', 'url_base', default = None,
+              help='Set the basedir for the url, often needed '
+                   'for Github pages. Defaults to name of repository. Use "/" for root.')
+def build(lesson_path: str = None, docs_path=None, assignments_path=None, url_base=None):
     """Build the website from the lesson plan
 
     Args:
@@ -78,19 +86,24 @@ def build(lesson_path: str = None, docs_path = None, assignments_path = None):
 
     lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
 
-    lp.build()
+    if url_base is None or url_base is False:
+        origin_url = git('remote', 'get-url', 'origin').strip()
+        url_base =Path(origin_url).stem
+        logger.info(f"Using url base '{url_base}'")
+    elif url_base == '/':
+        url_base = None
+
+    lp.build(url_base_dir=url_base)
+
 
 @main.command(help="Print configuration (tbd)")
 def config():
-    print("reporting")
+    print("reporting!")
+
 
 @main.command(help="Deploy the website to Github Pages")
-def deploy():
-    import os
-    from plumbum import local, FG
-    from plumbum.cmd import  yarn, git
-    from plumbum.commands.processes import ProcessExecutionError
-
+@click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
+def deploy(docs_path=None):
     # Workaround errors on build due to openssl issues in Node 17
     # Maybe need to set this extern to the call:
     # NODE_OPTIONS=--openssl-legacy-provider ./jtl deploy
@@ -99,11 +112,16 @@ def deploy():
 
     origin_url = git('remote', 'get-url', 'origin').strip()
 
-    try:
-        with local.cwd(root_dir / 'docs'):
-           yarn['build'] & FG
+    if docs_path is None:
+        docs_path = Path.cwd() / 'docs'
+    else:
+        docs_path = Path(docs_path)
 
-        with local.cwd(root_dir / 'docs/src/.vuepress/dist'):
+    try:
+        with local.cwd(docs_path):
+            yarn['build'] & FG
+
+        with local.cwd(docs_path / 'src/.vuepress/dist'):
             git['init'] & FG
             git['add', '-A'] & FG
             git['commit', '-m', 'deploy'] & FG
@@ -115,17 +133,21 @@ def deploy():
 
         exit(e.retcode)
 
+
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 @main.command(help="Run the development server")
-def serve(docs_path = None):
+def serve(docs_path=None):
     from plumbum import local, FG
     from plumbum.cmd import yarn
 
     if docs_path is None:
         docs_path = Path.cwd() / 'docs'
+    else:
+        docs_path = Path(docs_path)
 
     with local.cwd(docs_path):
         yarn['dev'] & FG
+
 
 if __name__ == '__main__':
     main()
