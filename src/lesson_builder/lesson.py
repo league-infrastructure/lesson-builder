@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 indent = '    '
 
+example_config = 'https://github.com/league-curriculum/Visual-Python/blob/main/assignments/config.yml'
+
 def get_assignment(path):
     """Read an assignment and construct a dict of the important information"""
 
@@ -22,11 +24,13 @@ def get_assignment(path):
     meta_path = path / '_assignment.yaml'
 
     if not meta_path.exists():
+        logger.warning(f"No _assignment.yaml meta file found in {path}")
         return {
             'sources': [],
             'texts': {},
             'resources': []
         }
+
 
     meta = yaml.safe_load(meta_path.read_text())
 
@@ -61,8 +65,8 @@ class Assignment:
         try:
             return self.ass_data['title']
         except KeyError:
-            print('ERROR', self.ass_data)
-            return ''
+            logger.warning(f'Did not get a title from assignment data, directory {self.ass_dir}\n')
+            return "<No Title>"
 
     @property
     def dir_name(self):
@@ -118,7 +122,7 @@ class Assignment:
         }
 
     def __str__(self):
-        return self.title
+        return self.title or '<No Title>'
 
 
 class Lesson:
@@ -245,7 +249,10 @@ class LessonPlan:
         config = yaml.safe_load((self.less_plan_dir / 'config.yml').read_text())
 
         if not config:
-            raise FileNotFoundError("No config file found in lesson plan. 'config.yml' is required in the lesson plan directory.")
+            raise FileNotFoundError(
+                "No config file found in lesson plan. 'config.yml' is required "
+                " in the lesson plan directory.\n You can probably just copy "
+                f" this one {example_config}")
 
 
         config['title'] = lp['title']
