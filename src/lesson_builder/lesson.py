@@ -22,7 +22,11 @@ def get_assignment(path):
     meta_path = path / '_assignment.yaml'
 
     if not meta_path.exists():
-        return {}
+        return {
+            'sources': [],
+            'texts': {},
+            'resources': []
+        }
 
     meta = yaml.safe_load(meta_path.read_text())
 
@@ -77,6 +81,8 @@ class Assignment:
 
         if not 'trinket' in ad['texts']:
             return
+
+
 
         # Copy the source files
         for source in ad['sources']:
@@ -237,6 +243,10 @@ class LessonPlan:
 
         # Read the config from the lesson plan
         config = yaml.safe_load((self.less_plan_dir / 'config.yml').read_text())
+
+        if not config:
+            raise FileNotFoundError("No config file found in lesson plan. 'config.yml' is required in the lesson plan directory.")
+
 
         config['title'] = lp['title']
         config['description'] = lp['description']
