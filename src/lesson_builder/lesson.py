@@ -84,11 +84,15 @@ class Assignment:
 
         text = ad['texts']['trinket'].read_text()
 
-        md = render('assignment.md',
-                    frontmatter={'title': ad['title']},
-                    title=ad['title'],
-                    working_directory=ass_dir,
-                    content=text)
+        try:
+            md = render('assignment.md',
+                        frontmatter={'title': ad['title']},
+                        title=ad['title'],
+                        working_directory=ass_dir,
+                        content=text)
+        except Exception as e:
+            print("ERROR ", source)
+            raise
 
         (ass_dir / 'index.md').write_text(md)
 
@@ -200,14 +204,21 @@ class LessonPlan:
         """ Create a new lesson plan
 
         Args:
-            less_plan_dir: Root dir for the lesson plan and other files.
+            less_plan_dir: Root dir for the lesson plan and other files, or a path to the lesson plan
             vue_doc_dir: The source dir for vuepress files, usually 'docs'
             asgn_dir: The directory for the assignments
             less_subdir: subdir in web_src_dir for generated lesson files.
         """
 
-        self.less_plan_dir = Path(less_plan_dir)
-        self.lesson_plan_file = self.less_plan_dir / 'lesson-plan.yaml'
+        if Path(less_plan_dir).is_file():
+            self.less_plan_dir = Path(less_plan_dir).parent
+            self.lesson_plan_file = Path(less_plan_dir)
+
+        else:
+            self.less_plan_dir = Path(less_plan_dir)
+            self.lesson_plan_file = self.less_plan_dir / 'lesson-plan.yaml'
+
+
         self.lesson_plan = yaml.safe_load(self.lesson_plan_file.read_text())
         self.vue_doc_dir = Path(vue_doc_dir)
         self.web_src_dir = self.vue_doc_dir / 'src'

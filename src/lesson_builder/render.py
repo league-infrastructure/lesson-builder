@@ -13,7 +13,6 @@ def dict_to_yaml(d):
         return ''
     return yaml.dump(d, allow_unicode=True)
 
-
 def render(template_name, *args, **kwargs):
     """Render a Jinja2 template"""
 

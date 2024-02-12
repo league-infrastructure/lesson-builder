@@ -28,7 +28,7 @@ Install the lesson plan program
 ```bash 
 python -mvenv .venv
 source .venv/bin/activate
-pip install https://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
+pip install git+https://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
 ```
 
 Install vuepress, [see these instructions for details](https://vuepress.vuejs.org/guide/getting-started.html). 
@@ -44,10 +44,14 @@ If you want to deploy to github pages with `jtl deploy`, the `doc` directory
 has an origin at Github. If you aren't going to deploy -- for example, if you
 just want to develop locally -- they you can create the vuepress site anywhere.
 
+You can use JTL to create the site, or you can use the vuepress cli. 
+
 ```bash
+jtl installvp
+# Or
 yarn create vuepress-site && (cd docs && yarn install)
 ```
-You can also just [use the LevelX repo template](), which has the `docs` directory
+You can also just [use the LevelX repo template](https://github.com/league-curriculum/LevelX.git), which has the `docs` directory
 already configured for vuepress. 
 
 ```bash
@@ -105,3 +109,4 @@ section. Set the source to the `gh-pages` branch, and the directory to `/`.
 
 Wait about 5 minutes, and reload the settings page. When your site is ready, 
 you will see a URL at the top of the page.
+

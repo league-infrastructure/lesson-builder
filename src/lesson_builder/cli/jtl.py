@@ -14,6 +14,8 @@ from plumbum import local, FG
 from plumbum.cmd import yarn, git
 from plumbum.commands.processes import ProcessExecutionError
 from slugify import slugify
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 from lesson_builder.lesson import LessonPlan
 from lesson_builder.lesson import logger as lesson_logger
@@ -24,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 assignment_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/assignment_template.zip'
 lesson_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/lesson_template.zip'
+
+
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
@@ -80,7 +84,9 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
 @click.option('-b', '--url_base', 'url_base', default=None,
               help='Set the basedir for the url, often needed '
                    'for Github pages. Defaults to name of repository. Use "/" for root.')
-def build(lesson_path: str = None, docs_path=None, assignments_path=None, url_base=None):
+@click.option('-w','--watch', is_flag=True, default=False, help='Rebuild when source files change')
+def build(lesson_path: str = None, docs_path=None, assignments_path=None,
+          url_base=None, watch=False):
     """Build the website from the lesson plan
 
     Args:
@@ -100,12 +106,49 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None, url_ba
     elif url_base == '/':
         url_base = None
 
+    # Always build once first,
     lp.build(url_base_dir=url_base)
+
+    if  watch:
+
+        class RebuildHandler(FileSystemEventHandler):
+            def on_any_event(self, event):
+                if not event.src_path.endswith('~') and Path(event.src_path).is_file():
+                    lp.build(url_base_dir=url_base)
+
+        event_handler = RebuildHandler()
+        observer = Observer()
+        observer.schedule(event_handler, assignments_path, recursive=True)
+        observer.schedule(event_handler, lesson_path, recursive=True)
+        observer.start()
+        try:
+            while observer.is_alive():
+                observer.join(1)
+        finally:
+            observer.stop()
+            observer.join()
 
 
 @main.command(help="Print configuration (tbd)")
 def config():
     print("reporting!")
+
+@main.command(help="Creates and configures a new vewpress docs dir")
+@click.option('-r', '--root', 'root_path',
+              help='Path to the dir tht will hold docs, defaults to current dir')
+def installvp(root_path=None):
+
+    if root_path is None:
+        root_path = Path.cwd()
+    else:
+        root_path = Path(root_path)
+
+    # yarn create vuepress-site && (cd docs && yarn install)
+    with local.cwd(root_path):
+        yarn['create','vuepress-site'] & FG
+
+    with local.cwd(root_path / 'docs'):
+        yarn['install'] & FG
 
 
 @main.command(help="Deploy the website to Github Pages")
@@ -141,8 +184,9 @@ def deploy(docs_path=None):
         exit(e.retcode)
 
 
-@click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 @main.command(help="Run the development server")
+@click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
+
 def serve(docs_path=None):
     from plumbum import local, FG
     from plumbum.cmd import yarn
@@ -162,7 +206,6 @@ def new():
 
 
 @new.command(name='plan', help="Create a new lesson plan")
-@click.option('--count', default=1, help='number of greetings')
 @click.argument('name')
 def new_lessonplan(name: str):
 
