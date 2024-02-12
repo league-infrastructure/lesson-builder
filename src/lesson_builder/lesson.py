@@ -246,13 +246,21 @@ class LessonPlan:
         lp = self.lesson_plan
 
         # Read the config from the lesson plan
-        config = yaml.safe_load((self.less_plan_dir / 'config.yml').read_text())
+        config_file =self.less_plan_dir / 'config.yml'
 
-        if not config:
+        if not config_file.exists():
             raise FileNotFoundError(
                 "No config file found in lesson plan. 'config.yml' is required "
-                " in the lesson plan directory.\n You can probably just copy "
-                f" this one {example_config}")
+                " in the lesson plan directory.\n ( expected it at"
+                "_You can probably just copy this one {example_config}: " +
+                example_config)
+
+        config = yaml.safe_load(config_file.read_text())
+
+        print("!!!", config)
+
+        if not config:
+            raise ValueError(f"Config file {config_file} is empty")
 
 
         config['title'] = lp['title']
