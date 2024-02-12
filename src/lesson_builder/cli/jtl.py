@@ -206,14 +206,16 @@ def new():
 
 
 @new.command(name='plan', help="Create a new lesson plan")
+@click.option('-F', '--force', is_flag=True, show_default=True, default=False,
+              help="Overwrite existing lesson plan")
 @click.argument('name')
-def new_lessonplan(name: str):
+def new_lessonplan(name: str, force: bool):
 
     title = slugify(name, separator='_')
 
     print("New Lesson Plan", title)
 
-    if Path(title).exists():
+    if Path(title).exists() and not force:
         raise FileExistsError(f"Lesson {title} already exists")
 
     download_and_extract_zip(lesson_template_url, title)

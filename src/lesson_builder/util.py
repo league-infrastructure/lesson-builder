@@ -26,7 +26,7 @@ def download_and_extract_zip(url, new_location):
         # New path for the top-level directory
 
         # Copy the contents to the new location with a new top-level directory name
-        shutil.copytree(extracted_dir, new_location)
+        shutil.copytree(extracted_dir, new_location, dirs_exist_ok=True)
 
         # Remove the temporary directory
         shutil.rmtree(temp_dir)

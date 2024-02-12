@@ -257,8 +257,6 @@ class LessonPlan:
 
         config = yaml.safe_load(config_file.read_text())
 
-        print("!!!", config)
-
         if not config:
             raise ValueError(f"Config file {config_file} is empty")
 
