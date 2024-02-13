@@ -12,6 +12,8 @@ jinja2 = "*"
 python-frontmatter = "*"
 plumbum = "*"
 requests = "*"
+setuptools-scm = "*"
+semantic-version = "*"
 
 [dev-packages]
 
