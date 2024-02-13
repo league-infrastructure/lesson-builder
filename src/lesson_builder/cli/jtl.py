@@ -23,11 +23,8 @@ from lesson_builder.util import download_and_extract_zip
 
 logger = logging.getLogger(__name__)
 
-
 assignment_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/assignment_template.zip'
 lesson_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/lesson_template.zip'
-
-
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
@@ -55,7 +52,7 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
     docs_path = Path(docs_path)
 
     if assignments_path is None:
-        assignments_path = Path.cwd()
+        assignments_path = lesson_path
 
     assignments_path = Path(assignments_path)
 
@@ -97,7 +94,6 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
 
     lesson_path, docs_path, assignments_path = check_dirs(lesson_path, docs_path, assignments_path)
 
-    lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
 
     if url_base is None or url_base is False:
         origin_url = git('remote', 'get-url', 'origin').strip()
@@ -107,6 +103,7 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
         url_base = None
 
     # Always build once first,
+    lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
     lp.build(url_base_dir=url_base)
 
     if  watch:
@@ -114,6 +111,7 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
         class RebuildHandler(FileSystemEventHandler):
             def on_any_event(self, event):
                 if not event.src_path.endswith('~') and Path(event.src_path).is_file():
+                    lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
                     lp.build(url_base_dir=url_base)
 
         event_handler = RebuildHandler()
@@ -131,7 +129,9 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
 
 @main.command(help="Print configuration (tbd)")
 def config():
-    print("reporting!")
+    from lesson_builder import __version__
+    print(f"Lesson Builder version {__version__}")
+
 
 @main.command(help="Creates and configures a new vewpress docs dir")
 @click.option('-r', '--root', 'root_path',
@@ -188,7 +188,7 @@ def deploy(docs_path=None):
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 
 def serve(docs_path=None):
-    from plumbum import local, FG
+    from plumbum import local, FG, BG
     from plumbum.cmd import yarn
 
     if docs_path is None:
