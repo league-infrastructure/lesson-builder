@@ -4,11 +4,11 @@ file system.
 """
 import logging
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 import frontmatter
 import yaml
-from dataclasses import dataclass
 
 from .render import render
 
@@ -48,7 +48,7 @@ def get_first_h1_heading(markdown_file_path):
 
 @dataclass
 class ResourceWrite:
-    source: Path|str|bytes
+    source: Path | str | bytes
     dest: Path
 
     @property
@@ -76,7 +76,7 @@ class ResourceWrite:
             self.dest.parent.mkdir(parents=True, exist_ok=True)
             self.dest.write_bytes(self.source)
         else:
-            pass # it is a render, save it for later.
+            pass  # it is a render, save it for later.
 
     def as_str(self, root: Path):
         if isinstance(self.source, Path):
@@ -93,7 +93,7 @@ class ResourceWrite:
 
     def __str__(self):
         if isinstance(self.source, Path):
-            src =str(self.source)
+            src = str(self.source)
 
         elif isinstance(self.source, str):
             src = f"<{len(self.source)} bytes>"
@@ -103,7 +103,6 @@ class ResourceWrite:
         dst = str(self.dest)
 
         return f"{src} -> {dst}"
-
 
 
 def get_assignment(path):
@@ -172,7 +171,7 @@ class Assignment:
 
         ad = self.ass_data
 
-        for text_name in ('trinket','index'):
+        for text_name in ('trinket', 'index'):
             if text_name in ad['texts']:
                 text = ad['texts'][text_name].read_text()
                 break
@@ -183,10 +182,10 @@ class Assignment:
         # We are turning a dict here so it can be rendered later. The dict is the
         # argument list for render()
         md = dict(template_name='assignment.md',
-                    frontmatter={'title': ad['title']},
-                    title=ad['title'],
-                    working_directory=self.dest_dir,
-                    content=text)
+                  frontmatter={'title': ad['title']},
+                  title=ad['title'],
+                  working_directory=self.dest_dir,
+                  content=text)
 
         return ResourceWrite(md, self.dest_dir / 'index.md')
 
@@ -198,7 +197,7 @@ class Assignment:
 
         # Copy the source files
         for source in ad['sources']:
-            res.append(ResourceWrite(source, self.dest_dir/source.name))
+            res.append(ResourceWrite(source, self.dest_dir / source.name))
 
         # Copy other resources
         for f in list(ad['resources']) + list(ad['sources']):
@@ -296,12 +295,11 @@ class Lesson:
             res.append(ResourceWrite(self.lesson_text_path, self.dest_dir / 'index.md'))
 
         # Copy images and other assets
-        for resource in self.ld.get('resources',[]):
+        for resource in self.ld.get('resources', []):
             res.append(ResourceWrite(self.lesson_plan.assets_src_dir / resource, self.dest_dir / resource))
 
         for a in self.assignments:
             res.extend(a.collect_writes())
-
 
         return res
 
@@ -364,13 +362,11 @@ class LessonPlan:
         self.lesson_plan = yaml.safe_load(self.lesson_plan_file.read_text())
         self.vue_doc_dir = Path(vue_doc_dir)
         self.web_src_dir = self.vue_doc_dir / 'src'
-        self.less_output_dir = self.web_src_dir / less_subdir # Where we write lesson outputs
+        self.less_output_dir = self.web_src_dir / less_subdir  # Where we write lesson outputs
 
         self.assets_src_dir = self.less_plan_dir / 'assets'
 
         self.asgn_dir = asgn_dir if asgn_dir is not None else self.less_plan_dir
-
-
 
     @property
     def lessons(self):
@@ -378,7 +374,7 @@ class LessonPlan:
             lesson['name'] = lesson_key
             yield Lesson(self, lesson)
 
-    def update_config(self,  basedir=None):
+    def update_config(self, basedir=None):
         """Generate the config file for viuepress"""
 
         lp = self.lesson_plan
@@ -409,10 +405,11 @@ class LessonPlan:
 
         config['themeConfig']['sidebar'] = self.make_sidebar()
 
+        logger.info(f'Writing config to {config_file}')
         config_file.write_text(yaml.dump(config))
 
+        # Remove the old config.js file
         js_config = self.web_src_dir / '.vuepress/config.js'
-
         if js_config.exists():
             js_config.unlink()
 
@@ -451,11 +448,9 @@ class LessonPlan:
 
         # Then do the renders
         for r in self.collect_writes():
-            if  r.is_render:
+            if r.is_render:
                 logger.debug(f'Rendering {r}')
                 r.render()
-
-
 
     def build(self, root_dir: Path = None, url_base_dir=None):
         """Write the lesson plan to the root directory
@@ -472,7 +467,6 @@ class LessonPlan:
         self.write_dir()
 
         self.update_config(url_base_dir)
-
 
     def make_sidebar(self):
 

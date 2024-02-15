@@ -8,6 +8,7 @@ __license__ = "MIT"
 import logging
 import os
 from pathlib import Path
+from lesson_builder.util import find_file_path
 
 import click
 from plumbum import local, FG
@@ -37,8 +38,7 @@ def main(verbose: bool, debug: bool):
     elif verbose:
         logging.basicConfig()
         logger.setLevel(logging.INFO)
-        lesson_logger.setLevel(logging.INFo)
-
+        lesson_logger.setLevel(logging.INFO)
 
 def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
     if lesson_path is None:
@@ -47,7 +47,11 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
     lesson_path = Path(lesson_path)
 
     if docs_path is None:
-        docs_path = Path.cwd() / 'docs/src'
+        vp = find_file_path(Path.cwd(), '.vuepress')
+        if not vp:
+            raise FileNotFoundError(f"Vuepress dir '.vuepress' not found in {Path.cwd()}")
+
+        docs_path = vp.parent.parent
 
     docs_path = Path(docs_path)
 
@@ -151,6 +155,25 @@ def installvp(root_path=None):
         yarn['install'] & FG
 
 
+
+
+
+@main.command(help="Run the development server")
+@click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
+
+def serve(docs_path=None):
+    from plumbum import local, FG, BG
+    from plumbum.cmd import yarn
+
+    if docs_path is None:
+        docs_path = Path.cwd() / 'docs'
+    else:
+        docs_path = Path(docs_path)
+
+    with local.cwd(docs_path):
+        yarn['dev'] & FG
+
+
 @main.command(help="Deploy the website to Github Pages")
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
 def deploy(docs_path=None):
@@ -171,34 +194,24 @@ def deploy(docs_path=None):
         with local.cwd(docs_path):
             yarn['build'] & FG
 
-        with local.cwd(docs_path / 'src/.vuepress/dist'):
+        dist = docs_path / 'src/.vuepress/dist'
+
+        with local.cwd(dist):
+            open(dist / '.nojekyll', 'a').close()
             git['init'] & FG
             git['add', '-A'] & FG
             git['commit', '-m', 'deploy'] & FG
             git['push', '-f', origin_url, 'master:gh-pages'] & FG
 
+
+
     except ProcessExecutionError as e:
 
         print(f"Command failed with exit code {e.retcode}: {e}")
-
+        print("⚠️  This is a known issue with Node 17 and openssl. Try setting NODE_OPTIONS=--openssl-legacy-provider")
+        print("For instance: ")
+        print("    NODE_OPTIONS=--openssl-legacy-provider jtl deploy")
         exit(e.retcode)
-
-
-@main.command(help="Run the development server")
-@click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
-
-def serve(docs_path=None):
-    from plumbum import local, FG, BG
-    from plumbum.cmd import yarn
-
-    if docs_path is None:
-        docs_path = Path.cwd() / 'docs'
-    else:
-        docs_path = Path(docs_path)
-
-    with local.cwd(docs_path):
-        yarn['dev'] & FG
-
 
 @main.group(help='create new lesson plans and assignments')
 def new():

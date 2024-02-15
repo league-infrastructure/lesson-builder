@@ -32,3 +32,26 @@ def download_and_extract_zip(url, new_location):
         shutil.rmtree(temp_dir)
 
 
+from pathlib import Path
+
+def find_file_path(directory, filename):
+    """
+    Search for all instances of the specified directory in the given directory and its subdirectories,
+    and return the one with the shortest path (least depth).
+
+    Parameters:
+    - directory: The root directory to start the search from, as a string or a Path object.
+    - dir_name: The name of the directory to search for.
+
+    Returns:
+    - The full path to the shallowest instance of the specified directory if found, otherwise None.
+    """
+    directory_path = Path(directory)
+    matching_dirs = [path for path in directory_path.rglob(filename) ]
+
+    if not matching_dirs:
+        return None
+
+    # Select the directory with the shortest path
+    shallowest_dir = min(matching_dirs, key=lambda path: len(path.parts))
+    return shallowest_dir
