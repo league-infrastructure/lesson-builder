@@ -161,7 +161,7 @@ class Assignment:
     @property
     def src_dir(self):
         """Source directory for the assignment"""
-        return self.self.ass_dir
+        return self.ass_dir
 
     @property
     def dest_dir(self):
@@ -259,6 +259,9 @@ class Lesson:
             lt_path = self.lesson_plan.less_plan_dir / self.ld['text']
         elif self.has_dir:
             lt_path = self.src_dir / 'index.md'
+        else:
+            raise FileNotFoundError(f"No lesson text file for {self.name}. \n"
+                                    "Add 'text: <filename>' to the lesson plan or create a directory with an index.md file.")
 
         return lt_path
 
@@ -267,7 +270,7 @@ class Lesson:
         try:
             return self.lesson_text_path.read_text()
         except FileNotFoundError:
-            raise FileNotFoundError(f"No lession file for {self.lesson_text_path}")
+            raise FileNotFoundError(f"No lesson file for {self.lesson_text_path}")
 
     @property
     def title(self):
