@@ -7,8 +7,10 @@ __license__ = "MIT"
 
 import logging
 import os
+import shutil
 from pathlib import Path
 from lesson_builder.util import find_file_path
+import yaml
 
 import click
 from plumbum import local, FG
@@ -234,19 +236,42 @@ def new_lessonplan(name: str, force: bool):
     download_and_extract_zip(lesson_template_url, title)
 
 @new.command(name='assignment', help="Create a new assignment")
+@click.option('-F', '--force', is_flag=True, show_default=True, default=False,
+              help="Overwrite existing assignment")
 @click.argument('name')
-def new_assignment(name: str):
+def new_assignment(name: str, force: bool = False):
 
     title = slugify(name, separator='_')
 
     print("New Assignment",title)
 
     if Path(title).exists():
-        raise FileExistsError(f"Assignment {title} already exists")
+        if force:
+            shutil.rmtree(title)
+        else:
+            raise FileExistsError(f"Assignment {title} already exists")
 
     download_and_extract_zip(assignment_template_url, title)
 
+    asgn_file = Path(title) / "_assignment.yaml"
 
+    d = yaml.safe_load(asgn_file.read_text())
+
+    d['title'] = name
+    d['description'] = name
+
+    # These should be removed from the source file,
+    # but well do it here for now.
+    if 'level' in d:
+        del d['level']
+
+    if 'module' in d:
+        del d['module']
+
+    if 'lesson' in d:
+        del d['lesson']
+
+    asgn_file.write_text(yaml.safe_dump(d))
 
 if __name__ == '__main__':
     main()

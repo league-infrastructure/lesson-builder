@@ -6,7 +6,7 @@ import logging
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-
+from textwrap import dedent
 import frontmatter
 import yaml
 
@@ -246,7 +246,7 @@ class Lesson:
 
     @property
     def has_dir(self):
-        return self.src_dir is not None
+        return self.src_dir is not None and self.src_dir.is_dir()
 
     @property
     def dest_dir(self):
@@ -254,14 +254,26 @@ class Lesson:
 
     @property
     def lesson_text_path(self):
+
+        lpt_base = self.lesson_plan.less_plan_dir / self.name
+
+        lt_path_file = lpt_base.with_suffix('.md')
+        lt_path_index = self.src_dir / 'index.md' if self.has_dir else None
+
         if 'text' in self.ld:
             #  the text field is the name of the file, in the lesson plan dir
             lt_path = self.lesson_plan.less_plan_dir / self.ld['text']
-        elif self.has_dir:
-            lt_path = self.src_dir / 'index.md'
+        elif lt_path_file.exists():
+            lt_path = lt_path_file
+        elif self.has_dir and lt_path_index is not None and lt_path_index.exists():
+            lt_path = lt_path_index
         else:
-            raise FileNotFoundError(f"No lesson text file for {self.name}. \n"
-                                    "Add 'text: <filename>' to the lesson plan or create a directory with an index.md file.")
+            raise FileNotFoundError(dedent(f"""
+            No lesson text file for {self.name}. Do one of:
+              * Add 'text: <filename>' to the lesson plan 
+              * Create a '{lpt_base}' directory with an index.md file.
+              * Create a '{lpt_base}.md' file
+              """).strip())
 
         return lt_path
 
