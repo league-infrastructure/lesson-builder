@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 from lesson_builder.util import find_file_path
 import yaml
-
+from textwrap import dedent
 import click
 from plumbum import local, FG
 from plumbum.cmd import yarn, git
@@ -272,6 +272,19 @@ def new_assignment(name: str, force: bool = False):
         del d['lesson']
 
     asgn_file.write_text(yaml.safe_dump(d))
+
+    if (Path(title)/"goal.png").exists():
+        (Path(title) / "goal.png").unlink()
+
+    tfile = Path(title)/"trinket.md"
+
+    tfile.write_text(dedent(f"""
+    # {name}
+    
+    {{{{ trinket("python_program.py", width="100%", height="600", embed_type="python") | safe }}}}
+    
+    """).strip())
+
 
 if __name__ == '__main__':
     main()
