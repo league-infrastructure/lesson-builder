@@ -112,13 +112,18 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
     lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
     lp.build(url_base_dir=url_base)
 
-    if  watch:
+    if watch:
 
         class RebuildHandler(FileSystemEventHandler):
             def on_any_event(self, event):
                 if not event.src_path.endswith('~') and Path(event.src_path).is_file():
                     lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
-                    lp.build(url_base_dir=url_base)
+
+                    try:
+                        lp.build(url_base_dir=url_base)
+                    except Exception as e:
+                        logger.error(f"Error building: {e}")
+
 
         event_handler = RebuildHandler()
         observer = Observer()

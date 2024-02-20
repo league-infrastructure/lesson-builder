@@ -1,17 +1,22 @@
-from jinja2 import Environment, FileSystemLoader
-from pathlib import Path
 import re
-import lesson_builder.templates as tmpl
-from .trinket import generate_trinket_iframe_src, read_code, trinket, goal_image
+from pathlib import Path
+
 import yaml
+from jinja2 import Environment, FileSystemLoader
+
+import lesson_builder.templates as tmpl
+from .trinket import read_code, trinket, goal_image
+
+
 def strip_html(text):
     return re.sub('<.*?>', '', text) if text else ''
 
-def dict_to_yaml(d):
 
+def dict_to_yaml(d):
     if not d:
         return ''
     return yaml.dump(d, allow_unicode=True)
+
 
 def render(template_name, *args, **kwargs):
     """Render a Jinja2 template"""

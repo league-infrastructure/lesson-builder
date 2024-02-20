@@ -1,0 +1,19 @@
+title: League Level0 Python
+description: League Level0 Python
+pages:
+  - index.md
+  - about.md
+  - intro.md
+resources:
+  - flag.png
+  - word-logo.png
+sidebar:
+  - path: /intro
+    title: Introduction
+lessons:
+  lesson1:
+    text: lesson1.md
+    resources:
+      - flag.png
+    assignments:
+    - basic/basic_dir

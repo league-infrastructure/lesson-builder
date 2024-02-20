@@ -9,6 +9,7 @@ from pathlib import Path
 from textwrap import dedent
 import frontmatter
 import yaml
+from .trinket import generate_trinket_iframe
 
 from .render import render
 
@@ -179,13 +180,22 @@ class Assignment:
             logger.warning(f"No text content for {self.src_dir}")
             return None
 
+        from .trinket import  extract_python
+
+        def replace_f(code, height):
+            return generate_trinket_iframe(code, height=str(height), width='100%')
+
+        # Convert "```python.run" lines, which are not
+        # handled by Markdown.
+        modified_text, code = extract_python(text,  replacement_f=replace_f)
+
         # We are turning a dict here so it can be rendered later. The dict is the
         # argument list for render()
         md = dict(template_name='assignment.md',
                   frontmatter={'title': ad['title']},
                   title=ad['title'],
                   working_directory=self.dest_dir,
-                  content=text)
+                  content=modified_text)
 
         return ResourceWrite(md, self.dest_dir / 'index.md')
 

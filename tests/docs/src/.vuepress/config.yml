@@ -1,0 +1,66 @@
+base: /Python-Level-0/
+description: League Level0 Python
+head:
+- - meta
+  - content: '#F37121'
+    name: theme-color
+- - meta
+  - content: true
+    name: apple-mobile-web-app-capable
+- - meta
+  - content: black
+    name: apple-mobile-web-app-status-bar-style
+plugins:
+- '@vuepress/plugin-back-to-top'
+- '@vuepress/plugin-medium-zoom'
+themeConfig:
+  displayAllHeaders: true
+  docsDir: ''
+  editLinkText: ''
+  editLinks: false
+  lastUpdated: false
+  logo: /assets/Flag.png
+  nav:
+  - link: /about/
+    text: About
+  - link: https://jointheleague.org
+    text: The LEAGUE
+  repo: ''
+  sidebar:
+  - path: /intro
+    title: Introduction
+  - children:
+    - path: /lessons/turtles/meet-tina/
+      title: Meet Tina
+    - path: /lessons/turtles/moving/
+      title: Moving
+    - path: /lessons/turtles/color/
+      title: Color
+    - path: /lessons/turtles/saying-hello/
+      title: Saying Hello
+    - path: /lessons/turtles/tinas-pen/
+      title: Tinas Pen
+    - path: /lessons/turtles/going-in-circles/
+      title: Going In Circles
+    - path: /lessons/turtles/tinas-grid/
+      title: Tinas Grid
+    collapsable: false
+    path: /lessons/turtles/
+    title: Turtles
+  - children:
+    - path: /lessons/module1/variables/
+      title: Variables
+    - path: /lessons/module1/loops/
+      title: Make a Square with Loops
+    - path: /lessons/module1/functions/
+      title: Functions
+    - path: /lessons/module1/crazy_shapes/
+      title: Crazy Shapes
+    - path: /lessons/module1/first_look_at_lists/
+      title: First Look at Lists
+    - path: /lessons/module1/if_and_else/
+      title: If and Else
+    collapsable: false
+    path: /lessons/module1/
+    title: 'Module 1: Remembering and Repeating'
+title: League Level0 Python
