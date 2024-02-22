@@ -1,9 +1,15 @@
+from dataclasses import dataclass
+
 import requests
 import tempfile
 import shutil
 import zipfile
 import os
 
+import yaml
+
+import logging
+logger = logging.getLogger('lesson-builder')
 
 def download_and_extract_zip(url, new_location):
     # Create a temporary directory
@@ -55,3 +61,91 @@ def find_file_path(directory, filename):
     # Select the directory with the shortest path
     shallowest_dir = min(matching_dirs, key=lambda path: len(path.parts))
     return shallowest_dir
+
+
+@dataclass
+class ResourceWrite:
+    source: Path | str | bytes
+    dest: Path
+
+    @property
+    def is_render(self):
+        return isinstance(self.source, dict)
+
+    def render(self):
+        from .render import render
+        rw = ResourceWrite(render(**self.source), self.dest)
+        rw.write()
+
+    def write(self):
+
+        if isinstance(self.source, Path):
+
+            if self.source.is_file():
+                self.dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(self.source, self.dest)
+            else:
+                shutil.copytree(self.source, self.dest, dirs_exist_ok=True)
+
+        elif isinstance(self.source, str):
+            self.dest.parent.mkdir(parents=True, exist_ok=True)
+            self.dest.write_text(self.source)
+        elif isinstance(self.source, bytes):
+            self.dest.parent.mkdir(parents=True, exist_ok=True)
+            self.dest.write_bytes(self.source)
+        else:
+            pass  # it is a render, save it for later.
+
+    def as_str(self, root: Path):
+        if isinstance(self.source, Path):
+            src = self.source.relative_to(root)
+
+        elif isinstance(self.source, str):
+            src = f"<{len(self.source)} bytes>"
+        elif isinstance(self.source, dict):
+            src = f"<Render {self.source['working_directory'].name}>"
+
+        dst = self.dest.relative_to(root)
+
+        return f"{src} -> {dst}"
+
+    def __str__(self):
+        if isinstance(self.source, Path):
+            src = str(self.source)
+
+        elif isinstance(self.source, str):
+            src = f"<{len(self.source)} bytes>"
+        elif isinstance(self.source, dict):
+            src = f"<Render {self.source['working_directory'].name}>"
+
+        dst = str(self.dest)
+
+        return f"{src} -> {dst}"
+
+
+def get_first_h1_heading(markdown_file_path):
+    """
+    Extracts the text of the first h1 heading from a markdown file.
+
+    Parameters:
+    markdown_file_path (str): The path to the markdown file.
+
+    Returns:
+    str: The text of the first h1 heading, or None if no h1 heading is found.
+    """
+    try:
+        with open(markdown_file_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                # Check if the line starts with '# ' indicating an h1 heading
+                if line.startswith('# '):
+                    # Return the text following '# ' (strip removes leading and trailing whitespace)
+
+                    return line.strip()[2:]
+    except FileNotFoundError:
+        print(f"File not found: {markdown_file_path}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    # Return None if no h1 heading is found
+    return None
+

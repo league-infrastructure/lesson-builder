@@ -20,19 +20,22 @@ from slugify import slugify
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from lesson_builder.lesson import LessonPlan
+from lesson_builder.lesson_plan import LessonPlan
 from lesson_builder.lesson import logger as lesson_logger
 from lesson_builder.util import download_and_extract_zip
-
+from lesson_builder.config import assignment_template_url, lesson_template_url
 logger = logging.getLogger(__name__)
 
-assignment_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/assignment_template.zip'
-lesson_template_url = 'https://github.com/league-python/PythonLessons/raw/master/templates/lesson_template.zip'
+
+show_exceptions = False
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
 @click.option('-vv', '--debug', is_flag=True, show_default=True, default=False, help="DEBUG logging")
-def main(verbose: bool, debug: bool):
+@click.option('-E', '--exceptions', is_flag=True, show_default=True, default=False,
+              help="Display exception stack traces")
+
+def main(verbose: bool, debug: bool, exceptions: bool):
     if debug:
         logging.basicConfig()
         logger.setLevel(logging.DEBUG)
@@ -41,6 +44,20 @@ def main(verbose: bool, debug: bool):
         logging.basicConfig()
         logger.setLevel(logging.INFO)
         lesson_logger.setLevel(logging.INFO)
+
+    global show_exceptions
+    show_exceptions = exceptions
+
+def main_entry():
+    try:
+        main()
+    except Exception as e:
+        if show_exceptions:
+            raise
+        else:
+            click.echo(f"Error: {e}")
+
+
 
 def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
     if lesson_path is None:
@@ -243,53 +260,73 @@ def new_lessonplan(name: str, force: bool):
 @new.command(name='assignment', help="Create a new assignment")
 @click.option('-F', '--force', is_flag=True, show_default=True, default=False,
               help="Overwrite existing assignment")
+@click.option('-d', '--dir', is_flag=True, show_default=True, default=False,
+              help="Create a directory assignment. Otherwise, create a file assignment.")
 @click.argument('name')
-def new_assignment(name: str, force: bool = False):
+def new_assignment(name: str, dir: bool = False, force: bool = False):
 
-    title = slugify(name, separator='_')
+    slug = slugify(name, separator='_')
 
-    print("New Assignment",title)
+    print("New Assignment",slug)
 
-    if Path(title).exists():
+    if Path(slug).exists() or Path(slug).with_suffix('.md').exists():
+
         if force:
-            shutil.rmtree(title)
+            if Path(slug).exists():
+                shutil.rmtree(slug)
+            else:
+                (Path(slug).with_suffix('.md')).unlink()
         else:
-            raise FileExistsError(f"Assignment {title} already exists")
+            raise FileExistsError(f"Assignment {slug} already exists")
 
-    download_and_extract_zip(assignment_template_url, title)
+    if dir:
+        download_and_extract_zip(assignment_template_url, slug)
 
-    asgn_file = Path(title) / "_assignment.yaml"
+        asgn_file = Path(slug) / "_assignment.yaml"
 
-    d = yaml.safe_load(asgn_file.read_text())
+        d = yaml.safe_load(asgn_file.read_text())
 
-    d['title'] = name
-    d['description'] = name
+        d['title'] = name
+        d['description'] = name
 
-    # These should be removed from the source file,
-    # but well do it here for now.
-    if 'level' in d:
-        del d['level']
+        # These should be removed from the source file,
+        # but well do it here for now.
+        if 'level' in d:
+            del d['level']
 
-    if 'module' in d:
-        del d['module']
+        if 'module' in d:
+            del d['module']
 
-    if 'lesson' in d:
-        del d['lesson']
+        if 'lesson' in d:
+            del d['lesson']
 
-    asgn_file.write_text(yaml.safe_dump(d))
+        asgn_file.write_text(yaml.safe_dump(d))
 
-    if (Path(title)/"goal.png").exists():
-        (Path(title) / "goal.png").unlink()
+        if (Path(slug)/"goal.png").exists():
+            (Path(slug) / "goal.png").unlink()
 
-    tfile = Path(title)/"trinket.md"
+        tfile = Path(slug)/"trinket.md"
 
-    tfile.write_text(dedent(f"""
-    # {name}
-    
-    {{{{ trinket("python_program.py", width="100%", height="600", embed_type="python") | safe }}}}
-    
-    """).strip())
+        tfile.write_text(dedent(f"""
+        # {name}
+        
+        {{{{ trinket("python_program.py", width="100%", height="600", embed_type="python") | safe }}}}
+        
+        """).strip())
+
+    else:
+
+        t = dedent(f"""
+        # {name}
+        
+        ```python.run
+        print("Hello, World!")
+        ```
+        
+        """).strip()
+
+        Path(slug).with_suffix('.md').write_text(t)
 
 
 if __name__ == '__main__':
-    main()
+    main_entry()

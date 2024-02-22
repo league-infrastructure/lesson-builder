@@ -53,7 +53,7 @@ def generate_trinket_iframe(code, width='300', height='500', embed_type='python'
     # Corrected base URL
     base_url = 'https://trinket.io/tools/1.0/jekyll/embed/'
     # Ensure the code is URL-encoded to be safely included in the URL
-    encoded_code = urllib.parse.quote(code.strip())
+    encoded_code = urllib.parse.quote(code)
 
     # Construct the src URL
     src_url = f'{base_url}{embed_type}#code={encoded_code}'
@@ -93,17 +93,17 @@ def extract_python(source: str, base_name: str = None, replacement_f=None):
             _, height = spec.split('=')
             height = int(height.strip("'"))
         else:
-            height = (len(py_code.split('\n')) * 16.8) + 90
+            height = (len(py_code.split('\n')) * 17) + 110
 
         if replacement_f is not None:
-            replacement = replacement_f(py_code, height)
+            replacement = replacement_f(py_code+"\n\n\n", height)
         else:
             # Replace the code with the Jinja function
             prog_name = f"{base_name}_{counter[0]}.py"
 
             code[prog_name] = py_code
             # Construct the replacement string
-            replacement = f"{{{{ trinket(\"{prog_name}\", width=\"100%\", height=\"{height}\", embed_type=\"python\") | safe }}}}"
+            replacement = f"{{{{ trinket(\"{prog_name}\", width=\"100%\", height=\"{height}\", embed_type=\"python3\") | safe }}}}"
 
         counter[0] += 1
 

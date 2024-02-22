@@ -11,9 +11,10 @@ sidebar:
   - path: /intro
     title: Introduction
 lessons:
-  lesson1:
+  module_1:
     text: lesson1.md
     resources:
       - flag.png
     assignments:
-    - basic/basic_dir
+    - module_1/basic_dir
+    - module_1/basic_file.md
