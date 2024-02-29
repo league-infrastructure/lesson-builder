@@ -19,6 +19,7 @@ TBD, but here is what a lesson plan directory looks like:
 └── lesson2.md
 ```
 
+
 ## Setup and run 
 
 ### Install the lesson builder program and vuepress
