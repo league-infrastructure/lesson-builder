@@ -214,6 +214,9 @@ def deploy(docs_path=None):
     else:
         docs_path = Path(docs_path)
 
+    config_path = docs_path / 'src/.vuepress/config.yml'
+    config = yaml.safe_load(config_path.read_text())
+
     try:
         with local.cwd(docs_path):
             yarn['build'] & FG
@@ -221,13 +224,14 @@ def deploy(docs_path=None):
         dist = docs_path / 'src/.vuepress/dist'
 
         with local.cwd(dist):
+            if 'cname' in config:
+                (dist / 'CNAME').write_text( config['cname'])
+
             open(dist / '.nojekyll', 'a').close()
             git['init'] & FG
             git['add', '-A'] & FG
             git['commit', '-m', 'deploy'] & FG
             git['push', '-f', origin_url, 'master:gh-pages'] & FG
-
-
 
     except ProcessExecutionError as e:
 
@@ -235,6 +239,7 @@ def deploy(docs_path=None):
         print("⚠️  This is a known issue with Node 17 and openssl. Try setting NODE_OPTIONS=--openssl-legacy-provider")
         print("For instance: ")
         print("    NODE_OPTIONS=--openssl-legacy-provider jtl deploy")
+        print("    export NODE_OPTIONS=--openssl-legacy-provider")
         exit(e.retcode)
 
 @main.group(help='create new lesson plans and assignments')
