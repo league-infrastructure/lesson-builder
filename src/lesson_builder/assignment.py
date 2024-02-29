@@ -8,6 +8,25 @@ import logging
 import frontmatter
 logger = logging.getLogger('lesson-builder')
 
+
+def get_resource_references(dir_, text):
+
+    # get the files names for images references in markdown style
+    # images, ![alt text](path)
+    import re
+    md_images = re.findall(r'!\[.*\]\((.*)\)', text)
+
+    # get the files names for images references in html style
+    # images, <img src="path" alt="alt text">
+    html_images = re.findall(r'<img src="(.*)"', text)
+
+    r = md_images + html_images
+
+    # Make the paths absolute to the assignment dir
+    return [ (dir_ /f).absolute() for f in r]
+
+    return
+
 def get_assignment(path):
     """Read an assignment and construct a dict of the important information"""
 
@@ -19,7 +38,9 @@ def get_assignment(path):
         meta['sources'] = []
 
     if path.is_file():
-        meta = frontmatter.loads(path.read_text())
+        text = path.read_text()
+
+        meta = frontmatter.loads(text)
         if not 'title' in meta:
             meta['title'] = get_first_h1_heading(path)
 
@@ -28,6 +49,8 @@ def get_assignment(path):
         prep_meta(meta)
 
         meta['texts']['trinket'] = path
+
+        meta['resources'] = get_resource_references(path.parent, text)
 
     elif path.is_dir():
         meta_path = path / '_assignment.yaml'
@@ -131,6 +154,7 @@ class Assignment:
             res.append(ResourceWrite(source, self.dest_dir / source.name))
 
         # Copy other resources
+
         for f in list(ad['resources']) + list(ad['sources']):
             f = Path(f)
             res.append(ResourceWrite(f, self.dest_dir / f.name))
