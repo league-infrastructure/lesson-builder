@@ -370,8 +370,6 @@ def jweb(level: str, org: str):
             logger.info("Installing vuepress in " + str(ld))
             yarn('install')
 
-
-
 @java.command(name='lessons', help='Generate lesson plans for the java modules')
 @click.option('-l', '--level', help="Name of the level to generate a lesson plan for")
 def lessons(level: str):

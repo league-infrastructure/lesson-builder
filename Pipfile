@@ -15,6 +15,7 @@ requests = "*"
 setuptools-scm = "*"
 semantic-version = "*"
 pygithub = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 pipfile = "*"
