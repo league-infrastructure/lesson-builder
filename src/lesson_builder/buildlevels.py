@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from .util import logger
+
 
 def add_after_h1(markdown_text, string_to_add):
     lines = markdown_text.split('\n')
@@ -28,7 +30,7 @@ def indent_headings(meta, t):
             l = "#" + l  # Bump all the headings up one level.
 
             if not found_first:
-                l += "\n\n{{ javaref(fm_level, fm_level,fm_lesson,fm_assignment, fm_dir) }}\n"
+                l += "\n\n{{ javaref(fm_level, fm_module,fm_lesson,fm_assignment, fm_dir) }}\n"
 
             found_first = True
 
@@ -38,7 +40,7 @@ def indent_headings(meta, t):
 
 
 def make_text(lv):
-    first = lv[0]
+    first = dict(**lv[0])
 
     if len(lv) == 1:
         o = indent_headings(first, first['text'])
@@ -60,7 +62,7 @@ def make_text(lv):
 
     o = f"""---\n{yaml.dump(first)}---\n{o}"""
 
-    o = add_after_h1(o, '\n\n{{ reporef(fm_level, fm_module) }}\n{{ forkrepo(fm_level, fm_module) }}\n')
+    o = add_after_h1(o, '\n{{ forkrepo(fm_level, fm_module) }}\n\n{{ reporef(fm_level, fm_module) }}\n\n')
 
     return o
 
@@ -69,6 +71,7 @@ def copy_resources(dir_, lv):
     for v in lv:
 
         if not 'resources' in v:
+            logger.debug(f"No resources in {v['assignment']}")
             continue
 
         for r in v['resources']:
@@ -78,10 +81,13 @@ def copy_resources(dir_, lv):
                 r = r.resolve()
                 if r.is_file():
                     d = dir_ / r.name
-                    if 'waldo' in v['assignment']:
-                        print("!!!!! Waldo",d)
                     d.parent.mkdir(parents=True, exist_ok=True)
                     d.write_bytes(r.read_bytes())
+
+                else:
+                    logger.debug(f"Resource {r} is not a file.")
+            else:
+                logger.dubug(f"Resource {r} does not exist.")
 
 
 def make_lessons(repo_root, web_root, meta):
@@ -93,22 +99,18 @@ def make_lessons(repo_root, web_root, meta):
 
     lessons = {}
 
-    lp = {
-        'title': 'Java Levels',
-        'description': 'All of the Java Levels',
-        'pages': [],
-        'resources': [],
-        'sidebar': [],
-        'lessons': None
-    }
-
     # Meta should already be restricted to one level,
     # so we can just iterate over the modules and lessons.
+
+    n_modules = 0
+    n_lessons = 0
 
     for mk, mv in sorted(meta.items()):
 
         if mk.startswith('_'):
             continue
+
+        n_modules += 1
 
         if mk not in lessons:
             lessons[mk] = {
@@ -125,8 +127,9 @@ def make_lessons(repo_root, web_root, meta):
                 dir_.write_text(lv)
                 continue
 
+            n_lessons += 1
+
             ltitle = (' '.join(lk.split('_')[1:])).title()
-            print(mk, ltitle, len(lv))
 
             dir_ = ld / mk / lk
 
@@ -151,6 +154,10 @@ def make_lessons(repo_root, web_root, meta):
             lessons[mk]['assignments'].append(str(dir_.relative_to(ld)))
             lessons[mk]['assignments'] = list(sorted(lessons[mk]['assignments']))
 
+    lp = yaml.safe_load((ld / 'lesson-plan.yaml').read_text())
+
     lp['lessons'] = lessons
 
-    (ld / 'lesson-plan.yaml').write_text(yaml.safe_dump(lp))
+    logger.info(f"Built {n_modules} modules and {n_lessons} lessons in {web_root}")
+
+    (ld / 'lesson-plan.yaml').write_text(yaml.dump(lp, sort_keys=False))

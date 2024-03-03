@@ -29,7 +29,7 @@ from lesson_builder.util import download_and_extract_zip,find_file_path
 from lesson_builder.jmod.git import clone_or_pull_repo, new_vuepress
 from lesson_builder.jmod.git import logger as git_logger
 
-logger = logging.getLogger(__name__)
+from lesson_builder.util import logger
 
 show_exceptions = False
 
@@ -110,9 +110,10 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
 @click.option('-b', '--url_base', 'url_base', default=None,
               help='Set the basedir for the url, often needed '
                    'for Github pages. Defaults to name of repository. Use "/" for root.')
+@click.option('-Y', '--yarn-build', is_flag=True, default=False, help='Also run Yarn Build')
 @click.option('-w', '--watch', is_flag=True, default=False, help='Rebuild when source files change')
 def build(lesson_path: str = None, docs_path=None, assignments_path=None,
-          url_base=None, watch=False):
+          url_base=None, yarn_build = False, watch=False):
     """Build the website from the lesson plan
 
     Args:
@@ -132,7 +133,14 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
 
     # Always build once first,
     lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
+    lp.update_config(basedir=url_base)
     lp.build(url_base_dir=url_base)
+
+    if yarn_build:
+        with local.cwd(docs_path):
+            yarn['build'] & FG
+
+    dist = docs_path / 'src/.vuepress/dist'
 
     if watch:
 
@@ -143,6 +151,11 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
 
                     try:
                         lp.build(url_base_dir=url_base)
+
+                        if yarn_build:
+                            with local.cwd(docs_path):
+                                yarn['build'] & FG
+
                     except Exception as e:
                         logger.error(f"Error building: {e}")
 
@@ -157,6 +170,9 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
         finally:
             observer.stop()
             observer.join()
+
+    elif yarn_build:
+        print("Built to ", dist)
 
 
 @main.command(help="Print configuration (tbd)")
@@ -205,7 +221,7 @@ def deploy(docs_path=None):
 
     os.environ['NODE_OPTIONS'] = '--openssl-legacy-provider'
 
-    origin_url = git('remote', 'get-url', 'origin').strip()
+
 
     if docs_path is None:
         docs_path = Path.cwd() / 'docs'
@@ -217,6 +233,7 @@ def deploy(docs_path=None):
 
     try:
         with local.cwd(docs_path):
+            origin_url = git('remote', 'get-url', 'origin').strip()
             yarn['build'] & FG
 
         dist = docs_path / 'src/.vuepress/dist'
@@ -370,18 +387,6 @@ def jweb(level: str, org: str):
             logger.info("Installing vuepress in " + str(ld))
             yarn('install')
 
-@java.command(name='lessons', help='Generate lesson plans for the java modules')
-@click.option('-l', '--level', help="Name of the level to generate a lesson plan for")
-def lessons(level: str):
-    r = get_repo_root()
-    level = level.title()
-
-    meta = yaml.safe_load(Path(r/'meta.yaml').read_text())
-    meta = meta[level]
-
-    web_root = r / '_build' / level
-
-    make_lessons(r, web_root, meta )
 
 @java.command(name='push', help='Push modules to repos')
 @click.option('-l', '--level_dir', help="Root directory to collect modules to push")
@@ -395,7 +400,48 @@ def jpush(level_dir, org="League-Java"):
 def jmeta(level_dir='levels'):
     update_meta(get_repo_root(), level_dir)
 
+@java.command(name='serve', help='Development server for a level website')
+@click.option('-l', '--level', help="Name of the level to serve")
+@click.pass_context
+def jserve(ctx, level):
+    r = get_repo_root()
+    docs_path = r / '_build' / level / 'docs'
 
+    ctx.invoke(serve,docs_path=docs_path)
+
+@java.command(name='build', help='Build the lesson website for a level')
+@click.option('-l', '--level', help="Name of the level to serve")
+@click.option('-Y', '--yarn-build', is_flag=True, default=False, help='Also run Yarn Build')
+@click.option('-w', '--watch', is_flag=True, default=False, help='Rebuild when source files change')
+@click.pass_context
+def jbuild(ctx, level, yarn_build = False, watch=False):
+    r = get_repo_root()
+
+    level = level.title()
+
+    web_root = r / '_build' / level
+    docs_path = web_root / 'docs'
+    lesson_path = web_root / 'lessons'
+
+    meta = yaml.safe_load(Path(r/'meta.yaml').read_text())
+    meta = meta[level]
+
+
+    make_lessons(r, web_root, meta )
+
+    ctx.invoke(build,lesson_path=lesson_path, docs_path=docs_path,
+               url_base=level, yarn_build=yarn_build,  watch=watch)
+
+
+@java.command(name='deploy', help="Deploy the website to Github Pages")
+@click.option('-l', '--level', help="Name of the level to serve")
+@click.pass_context
+def jdeploy(ctx, level):
+    r = get_repo_root()
+    docs_path = r / '_build' / level / 'docs'
+
+    logger.info("Deploying " + str(docs_path))
+    ctx.invoke(deploy,docs_path=docs_path)
 
 if __name__ == '__main__':
     main_entry()

@@ -9,6 +9,7 @@ print( semantic_version.Version('.'.join(sys.argv[1].split('.')[:3])).next_patch
 # Create a new revision
 rev:
 	git tag $(NEXT_REV)
+	git push --tags origin
 
 showrev:
 	@echo this=$(THIS_REV) next=$(NEXT_REV)

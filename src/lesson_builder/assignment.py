@@ -7,7 +7,7 @@ import yaml
 import logging
 import frontmatter
 logger = logging.getLogger('lesson-builder')
-
+from .config import resource_extensions
 
 def get_resource_references(dir_, text):
 
@@ -76,7 +76,7 @@ def get_assignment(path):
             meta['texts'][f.stem] = f
 
         for f in list(path.glob('*')):
-            if f.suffix  in ('.png', '.jpg', '.gif'):
+            if f.suffix  in resource_extensions:
                 meta['resources'].append(f)
 
     return meta

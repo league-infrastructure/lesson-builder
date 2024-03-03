@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from lesson_builder.config import resource_extensions
 
 def walk_modules(root):
     root = Path(root)
@@ -160,7 +160,7 @@ def process_dir(repo_root, root, f):
     resources = []
     if web_dir.exists():
         for e in web_dir.iterdir():
-            if e.is_file() and e.suffix in ('.png', '.gif', '.jpg'):
+            if e.is_file() and e.suffix in resource_extensions:
                 resources.append(str(e))
 
     r['resources'] = resources

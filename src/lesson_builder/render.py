@@ -7,7 +7,7 @@ import frontmatter
 import lesson_builder.templates as tmpl
 from lesson_builder.config import level_module_repo_src_tmpl, level_module_repo_tmpl
 from .trinket import read_code, trinket, goal_image
-
+from textwrap import dedent
 
 def strip_html(text):
     return re.sub('<.*?>', '', text) if text else ''
@@ -18,25 +18,44 @@ def dict_to_yaml(d):
         return ''
     return yaml.dump(d, allow_unicode=True)
 
+def display_button(text, color, url,icon_image):
+
+    return dedent(f"""
+    <div style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; cursor: pointer; width: 200px;">
+    <a href="{url}" target="_blank" 
+    style="text-decoration: none; color: white; font-size: 14pt; display: flex; align-items: center; gap: 10px;">
+    <img :src="$withBase('/assets/{icon_image}')" alt="{text}" style="width:30px; vertical-align: middle;">
+    {text}
+    </a>
+    </div>""").strip()
+
+def display_link(text, color, url,icon_image):
+
+    return dedent(f"""
+    <span style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; margin-right: 10px;">
+    <a href="{url}" target="_blank"  style=" color: white; font-size: 14pt; align-items: center; gap: 10px;">
+    <img :src="$withBase('/assets/{icon_image}')" alt="{text}" style="width:20px; vertical-align: middle;">
+    {text}
+    </a>
+    </span>""").strip()
 
 def javaref(level, module, lesson, asgn, dir):
     p = dir.split('/src/')[-1].strip('/')
     dir_url = level_module_repo_src_tmpl.format(level=level, module=module, path=p)
 
-    return f"""<a href="{dir_url}" target="_blank">Java Source</a>"""
+    return display_link(f"View Source", "gray", dir_url, "github-mark.png")
 
 
 def reporef(level, module):
     repo_url = level_module_repo_tmpl.format(level=level, module=module)
 
-    return f"""<a href="{repo_url}" target="_blank">{level}-{module} Repo</a>"""
-
+    return display_link(f"View {level}-{module}", "blue", repo_url, "github-mark-white.png")
 
 def forkrepo(level, module):
-    fork_url = level_module_repo_tmpl.format(level=level, module=module) + 'fork'
+    fork_url = level_module_repo_tmpl.format(level=level, module=module) + '/fork'
 
-    return f"""<button style="background-color: green; color: white; padding: 10px 24px; border: none; cursor: pointer;" 
-    onclick="window.open('{fork_url}', '_blank')">Fork {level}-{module}</button>"""
+    return display_link(f"Fork {level}-{module}", "green", fork_url, "github-mark-white.png")
+
 
 
 def strip_frontmatter(markdown_text):

@@ -8,6 +8,7 @@ from .config import example_config
 from .util import ResourceWrite
 
 import logging
+import frontmatter
 logger = logging.getLogger('lesson-builder')
 
 class LessonPlan:
@@ -47,7 +48,7 @@ class LessonPlan:
             yield Lesson(self, lesson)
 
     def update_config(self, basedir=None):
-        """Generate the config file for viuepress"""
+        """Generate the config file for vue"""
 
         lp = self.lesson_plan
 
@@ -69,8 +70,19 @@ class LessonPlan:
         config['title'] = lp['title']
         config['description'] = lp['description']
 
+        idx = self.less_plan_dir / 'index.md'
+        fm = frontmatter.loads(idx.read_text())
+        for k in ('tagline','actionText'):
+            if k in lp:
+                fm[k] = lp[k]
+
+
+        idx.write_text(frontmatter.dumps(fm) )
+
         if basedir:
             config['base'] = '/' + basedir.strip('/') + '/'
+        else:
+            config['base'] = ('/' +lp['base'] + '/') if 'base' in lp else '/'
 
         # config output file for vuepress
         config_file = self.web_src_dir / '.vuepress/config.yml'
