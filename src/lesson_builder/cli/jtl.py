@@ -2,51 +2,58 @@
 # lesson website.
 
 __author__ = "Eric Busboom"
-__copyright__ = "Eric Busboom"
+__copyright__ = "The League of Amazing Programmers"
 __license__ = "MIT"
 
 import logging
 import os
 import shutil
 from pathlib import Path
-from lesson_builder.util import find_file_path
-import yaml
 from textwrap import dedent
+
 import click
+import yaml
 from plumbum import local, FG
 from plumbum.cmd import yarn, git
 from plumbum.commands.processes import ProcessExecutionError
 from slugify import slugify
-from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
-from lesson_builder.lesson_plan import LessonPlan
-from lesson_builder.lesson import logger as lesson_logger
-from lesson_builder.util import download_and_extract_zip
+from lesson_builder.buildlevels import make_lessons
 from lesson_builder.config import assignment_template_url, lesson_template_url
+from lesson_builder.jmod.tasks import push, update_meta
+from lesson_builder.lesson import logger as lesson_logger
+from lesson_builder.lesson_plan import LessonPlan
+from lesson_builder.util import download_and_extract_zip,find_file_path
+from lesson_builder.jmod.git import clone_or_pull_repo, new_vuepress
+from lesson_builder.jmod.git import logger as git_logger
+
 logger = logging.getLogger(__name__)
 
-
 show_exceptions = False
+
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, show_default=True, default=False, help="INFO logging")
 @click.option('-vv', '--debug', is_flag=True, show_default=True, default=False, help="DEBUG logging")
 @click.option('-E', '--exceptions', is_flag=True, show_default=True, default=False,
               help="Display exception stack traces")
-
 def main(verbose: bool, debug: bool, exceptions: bool):
     if debug:
         logging.basicConfig()
         logger.setLevel(logging.DEBUG)
         lesson_logger.setLevel(logging.DEBUG)
+        git_logger.setLevel(logging.DEBUG)
     elif verbose:
         logging.basicConfig()
         logger.setLevel(logging.INFO)
         lesson_logger.setLevel(logging.INFO)
+        git_logger.setLevel(logging.INFO)
 
     global show_exceptions
     show_exceptions = exceptions
+
 
 def main_entry():
     try:
@@ -56,7 +63,6 @@ def main_entry():
             raise
         else:
             click.echo(f"Error: {e}")
-
 
 
 def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
@@ -104,7 +110,7 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
 @click.option('-b', '--url_base', 'url_base', default=None,
               help='Set the basedir for the url, often needed '
                    'for Github pages. Defaults to name of repository. Use "/" for root.')
-@click.option('-w','--watch', is_flag=True, default=False, help='Rebuild when source files change')
+@click.option('-w', '--watch', is_flag=True, default=False, help='Rebuild when source files change')
 def build(lesson_path: str = None, docs_path=None, assignments_path=None,
           url_base=None, watch=False):
     """Build the website from the lesson plan
@@ -116,7 +122,6 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
     """
 
     lesson_path, docs_path, assignments_path = check_dirs(lesson_path, docs_path, assignments_path)
-
 
     if url_base is None or url_base is False:
         origin_url = git('remote', 'get-url', 'origin').strip()
@@ -141,7 +146,6 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
                     except Exception as e:
                         logger.error(f"Error building: {e}")
 
-
         event_handler = RebuildHandler()
         observer = Observer()
         observer.schedule(event_handler, assignments_path, recursive=True)
@@ -165,7 +169,6 @@ def config():
 @click.option('-r', '--root', 'root_path',
               help='Path to the dir tht will hold docs, defaults to current dir')
 def installvp(root_path=None):
-
     if root_path is None:
         root_path = Path.cwd()
     else:
@@ -173,20 +176,16 @@ def installvp(root_path=None):
 
     # yarn create vuepress-site && (cd docs && yarn install)
     with local.cwd(root_path):
-        yarn['create','vuepress-site'] & FG
+        yarn['create', 'vuepress-site'] & FG
 
     with local.cwd(root_path / 'docs'):
         yarn['install'] & FG
 
 
-
-
-
 @main.command(help="Run the development server")
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
-
 def serve(docs_path=None):
-    from plumbum import local, FG, BG
+    from plumbum import local, FG
     from plumbum.cmd import yarn
 
     if docs_path is None:
@@ -196,7 +195,6 @@ def serve(docs_path=None):
 
     with local.cwd(docs_path):
         yarn['dev'] & FG
-
 
 @main.command(help="Deploy the website to Github Pages")
 @click.option('-d', '--docs', 'docs_path', help='Path to the root of the vuepress docs directory ( one above src )')
@@ -225,7 +223,7 @@ def deploy(docs_path=None):
 
         with local.cwd(dist):
             if 'cname' in config:
-                (dist / 'CNAME').write_text( config['cname'])
+                (dist / 'CNAME').write_text(config['cname'])
 
             open(dist / '.nojekyll', 'a').close()
             git['init'] & FG
@@ -242,6 +240,7 @@ def deploy(docs_path=None):
         print("    export NODE_OPTIONS=--openssl-legacy-provider")
         exit(e.retcode)
 
+
 @main.group(help='create new lesson plans and assignments')
 def new():
     pass
@@ -252,7 +251,6 @@ def new():
               help="Overwrite existing lesson plan")
 @click.argument('name')
 def new_lessonplan(name: str, force: bool):
-
     title = slugify(name, separator='_')
 
     print("New Lesson Plan", title)
@@ -262,6 +260,7 @@ def new_lessonplan(name: str, force: bool):
 
     download_and_extract_zip(lesson_template_url, title)
 
+
 @new.command(name='assignment', help="Create a new assignment")
 @click.option('-F', '--force', is_flag=True, show_default=True, default=False,
               help="Overwrite existing assignment")
@@ -269,10 +268,9 @@ def new_lessonplan(name: str, force: bool):
               help="Create a directory assignment. Otherwise, create a file assignment.")
 @click.argument('name')
 def new_assignment(name: str, dir: bool = False, force: bool = False):
-
     slug = slugify(name, separator='_')
 
-    print("New Assignment",slug)
+    print("New Assignment", slug)
 
     if Path(slug).exists() or Path(slug).with_suffix('.md').exists():
 
@@ -307,10 +305,10 @@ def new_assignment(name: str, dir: bool = False, force: bool = False):
 
         asgn_file.write_text(yaml.safe_dump(d))
 
-        if (Path(slug)/"goal.png").exists():
+        if (Path(slug) / "goal.png").exists():
             (Path(slug) / "goal.png").unlink()
 
-        tfile = Path(slug)/"trinket.md"
+        tfile = Path(slug) / "trinket.md"
 
         tfile.write_text(dedent(f"""
         # {name}
@@ -331,6 +329,74 @@ def new_assignment(name: str, dir: bool = False, force: bool = False):
         """).strip()
 
         Path(slug).with_suffix('.md').write_text(t)
+
+
+def get_repo_root():
+    from plumbum.cmd import git
+
+    repo_name = git("rev-parse", "--show-toplevel").split('/')[-1].strip()
+
+    rr = Path.cwd()
+
+    assert repo_name == 'java-modules' and (rr / 'levels').exists()
+
+    return rr
+
+
+@main.group(help='manage java modules repos and websites')
+def java():
+    pass
+
+@java.command(name='web', help='Update a level website')
+@click.option('-l', '--level', help="Name of the level to generate a lesson plan for")
+@click.option('-o', '--org', default='League-Java', help="Org or owner of the repo")
+def jweb(level: str, org: str):
+    from plumbum import local
+    from plumbum.cmd import yarn
+
+    level = level.title()
+
+    r = get_repo_root()
+    new_vuepress(level, dest_org=org)
+
+    clone_or_pull_repo(org, level, r/'_build')
+
+    ld = r / '_build' / level / 'docs'
+
+    assert ld.exists()
+
+    if not (ld/'src'/'.vuepress').exists():
+        with local.cwd(ld):
+            logger.info("Installing vuepress in " + str(ld))
+            yarn('install')
+
+
+
+@java.command(name='lessons', help='Generate lesson plans for the java modules')
+@click.option('-l', '--level', help="Name of the level to generate a lesson plan for")
+def lessons(level: str):
+    r = get_repo_root()
+    level = level.title()
+
+    meta = yaml.safe_load(Path(r/'meta.yaml').read_text())
+    meta = meta[level]
+
+    web_root = r / '_build' / level
+
+    make_lessons(r, web_root, meta )
+
+@java.command(name='push', help='Push modules to repos')
+@click.option('-l', '--level_dir', help="Root directory to collect modules to push")
+@click.option('-o', '--org', default='League-Java', help="Org or owner of the repo")
+def jpush(level_dir, org="League-Java"):
+    push(get_repo_root(), level_dir, org, build_dir=None)
+
+
+@java.command(name='meta', help='Regenerate meta.yaml')
+@click.option('-l', '--level_dir', default='levels', help="Root directory to levels")
+def jmeta(level_dir='levels'):
+    update_meta(get_repo_root(), level_dir)
+
 
 
 if __name__ == '__main__':

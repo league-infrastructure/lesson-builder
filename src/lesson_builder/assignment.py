@@ -121,7 +121,7 @@ class Assignment:
                 text = ad['texts'][text_name].read_text()
                 break
         else:
-            logger.warning(f"No text content for {self.name}")
+            logger.warning(f"No text content for {self.name} ({ad['texts']})")
             return None
 
         from .trinket import  extract_python

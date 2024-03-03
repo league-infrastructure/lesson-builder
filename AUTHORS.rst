@@ -2,4 +2,4 @@
 Contributors
 ============
 
-* Eric Busboom <eric@civicknowledge.com>
+* Eric Busboom <eric@jointheleague.org>
