@@ -36,8 +36,8 @@ def indent_headings(meta, t):
 
     return '\n'.join(lines)
 
-def make_text(lv):
 
+def make_text(lv):
     first = lv[0]
 
     if len(lv) == 1:
@@ -67,23 +67,25 @@ def make_text(lv):
 
 def copy_resources(dir_, lv):
     for v in lv:
+
         if not 'resources' in v:
             continue
 
         for r in v['resources']:
             r = Path(r)
+
             if r.exists():
                 r = r.resolve()
                 if r.is_file():
                     d = dir_ / r.name
+                    if 'waldo' in v['assignment']:
+                        print("!!!!! Waldo",d)
                     d.parent.mkdir(parents=True, exist_ok=True)
                     d.write_bytes(r.read_bytes())
 
 
-def make_lessons(repo_root, web_root,  meta):
+def make_lessons(repo_root, web_root, meta):
     """Build the lessons directory for a java level"""
-
-
 
     ld = web_root / 'lessons'
 
@@ -100,10 +102,12 @@ def make_lessons(repo_root, web_root,  meta):
         'lessons': None
     }
 
+    # Meta should already be restricted to one level,
+    # so we can just iterate over the modules and lessons.
+
     for mk, mv in sorted(meta.items()):
 
         if mk.startswith('_'):
-
             continue
 
         if mk not in lessons:

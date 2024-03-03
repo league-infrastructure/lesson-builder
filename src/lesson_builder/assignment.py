@@ -75,8 +75,9 @@ def get_assignment(path):
         for f in path.glob('*.md'):
             meta['texts'][f.stem] = f
 
-        for f in list(path.glob('*.png')) + list(path.glob('*.gif')):
-            meta['resources'].append(f)
+        for f in list(path.glob('*')):
+            if f.suffix  in ('.png', '.jpg', '.gif'):
+                meta['resources'].append(f)
 
     return meta
 
