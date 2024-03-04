@@ -149,3 +149,26 @@ def get_first_h1_heading(markdown_file_path):
     # Return None if no h1 heading is found
     return None
 
+
+def get_repo_root():
+    from plumbum.cmd import git
+
+    repo_name = git("rev-parse", "--show-toplevel").split('/')[-1].strip()
+
+    rr = Path.cwd()
+
+    assert repo_name == 'java-modules' and (rr / 'levels').exists(), "Not in the java-modules repo"
+
+    return rr
+
+
+def build_dir(level, module=None):
+    rr = get_repo_root()
+
+    level = level.title()
+
+    if module is None:
+        return rr / '_build' / 'levels' / level
+    else:
+        module = module.title()
+        return rr / '_build' / 'modules' / level / module

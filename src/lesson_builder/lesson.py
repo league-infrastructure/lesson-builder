@@ -5,11 +5,11 @@ file system.
 import logging
 from pathlib import Path
 from textwrap import dedent
+
 import frontmatter
 
 from .assignment import Assignment
 from .util import ResourceWrite, get_first_h1_heading
-import logging
 
 logger = logging.getLogger('lesson-builder')
 
@@ -87,7 +87,6 @@ class Lesson:
         if 'title' in self.ld:
             return self.ld['title']
 
-
         fm = frontmatter.loads(self.lesson_text)
         try:
             return fm['title']
@@ -133,6 +132,8 @@ class Lesson:
               title: Turtle Spiral
 
         """
+
+        assert self.title
 
         d = {
             'collapsable': False,

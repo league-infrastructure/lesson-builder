@@ -20,15 +20,8 @@ def update_modules(repo_root, levels_root):
         # copy_scripts(dir_)
         disable_eclipse(dir_)
 
-
-
-def push(repo_root, root, org, build_dir=None):
+def push(repo_root, root, org, build_dir):
     """Upload the module in the current dir to Github"""
-
-    if build_dir is None:
-        build_dir = repo_root / "_build"
-
-    build_dir = Path(build_dir)
 
     for dir_ in walk_modules(root):
         create_repo(dir_, org, build_dir)

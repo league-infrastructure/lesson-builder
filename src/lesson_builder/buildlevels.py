@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import frontmatter
 import yaml
 
 from .util import logger
@@ -38,12 +39,32 @@ def indent_headings(meta, t):
 
     return '\n'.join(lines)
 
+def add_javaref(meta, t):
+    lines = []
+
+    found_first = False
+
+    for l in t.splitlines():
+        if l.startswith('#'):
+
+            if not found_first:
+                l += "\n\n{{ javaref(fm_level, fm_module,fm_lesson,fm_assignment, fm_dir) }}\n"
+
+            found_first = True
+
+        lines.append(l)
+
+    return '\n'.join(lines)
+
 
 def make_text(lv):
     first = dict(**lv[0])
 
+    if 'snake' in first['text'].lower():
+        print("SNAKE", len(lv))
+
     if len(lv) == 1:
-        o = indent_headings(first, first['text'])
+        o = add_javaref(first, first['text'])
     else:
         title = first['lesson'].replace('_', ' ').title()
 
@@ -139,17 +160,12 @@ def make_lessons(repo_root, web_root, meta):
 
             (dir_ / 'index.md').write_text(text)
 
-            a = {
-                'level': lk,
-                'module': mk,
-                'lesson': lk,
-                'title': ltitle,
-                'description': ''
-            }
+            fm = dict(frontmatter.loads(text))
+
 
             copy_resources(dir_, lv)
 
-            (dir_ / '_assignment.yaml').write_text(yaml.dump(a))
+            (dir_ / '_assignment.yaml').write_text(yaml.dump(fm))
 
             lessons[mk]['assignments'].append(str(dir_.relative_to(ld)))
             lessons[mk]['assignments'] = list(sorted(lessons[mk]['assignments']))

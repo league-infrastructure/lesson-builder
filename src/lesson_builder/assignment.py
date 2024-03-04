@@ -1,16 +1,17 @@
+import logging
 from pathlib import Path
 
+import frontmatter
+import yaml
 
 from .trinket import generate_trinket_iframe
 from .util import ResourceWrite, get_first_h1_heading
-import yaml
-import logging
-import frontmatter
+
 logger = logging.getLogger('lesson-builder')
 from .config import resource_extensions
 
-def get_resource_references(dir_, text):
 
+def get_resource_references(dir_, text):
     # get the files names for images references in markdown style
     # images, ![alt text](path)
     import re
@@ -23,9 +24,10 @@ def get_resource_references(dir_, text):
     r = md_images + html_images
 
     # Make the paths absolute to the assignment dir
-    return [ (dir_ /f).absolute() for f in r]
+    return [(dir_ / f).absolute() for f in r]
 
     return
+
 
 def get_assignment(path):
     """Read an assignment and construct a dict of the important information"""
@@ -41,7 +43,7 @@ def get_assignment(path):
         text = path.read_text()
 
         meta = frontmatter.loads(text)
-        if not 'title' in meta:
+        if 'title' not in meta:
             meta['title'] = get_first_h1_heading(path)
 
         meta['source_dir'] = None
@@ -75,9 +77,15 @@ def get_assignment(path):
         for f in path.glob('*.md'):
             meta['texts'][f.stem] = f
 
+            if 'title' not in meta:
+                meta['title'] = get_first_h1_heading(f)
+
         for f in list(path.glob('*')):
-            if f.suffix  in resource_extensions:
+            if f.suffix in resource_extensions:
                 meta['resources'].append(f)
+
+    if not meta['title']:
+        print("XXX", meta)
 
     return meta
 
@@ -95,7 +103,10 @@ class Assignment:
     @property
     def title(self):
         try:
-            return self.ass_data['title']
+            title = self.ass_data['title']
+
+            return title
+
         except KeyError:
             logger.warning(f'Did not get a title from assignment data, directory {self.path}\n')
             return "<No Title>"
@@ -125,14 +136,14 @@ class Assignment:
             logger.warning(f"No text content for {self.name} ({ad['texts']})")
             return None
 
-        from .trinket import  extract_python
+        from .trinket import extract_python
 
         def replace_f(code, height):
             return generate_trinket_iframe(code, height=str(height), width='100%')
 
         # Convert "```python.run" lines, which are not
         # handled by Markdown.
-        modified_text, code = extract_python(text,  replacement_f=replace_f)
+        modified_text, code = extract_python(text, replacement_f=replace_f)
 
         # We are turning a dict here so it can be rendered later. The dict is the
         # argument list for render()
@@ -170,6 +181,8 @@ class Assignment:
 
     @property
     def sidebar_entry(self):
+
+        assert self.title, f'/lessons/{self.lesson.name}/{self.name} lacks a title'
 
         return {
             'path': f'/lessons/{self.lesson.name}/{self.name}/',

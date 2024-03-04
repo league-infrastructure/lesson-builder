@@ -130,6 +130,24 @@ def write_gitignore(dir_):
 
     (dir_/'.gitignore').write_text(gi_s+'\n')
 
+def flat_meta(meta):
+    """Flatten the meta data into a list of assignmets"""
+    out = []
+
+    for l, v in meta.items():
+        if l.startswith('_'):
+            continue
+        for m, mv in v.items():
+            if m.startswith('_'):
+                continue
+            for lsk, lsv in mv.items():
+                if lsk.startswith('_'):
+                    continue
+
+                out.extend(lsv)
+
+    return out
+
 def write_launch(dir_):
     """Write the VSCode launch.json file"""
     configs = []
@@ -313,3 +331,27 @@ def compile_meta(metas):
         levels[l][m][ls].append(meta)
 
     return levels
+
+
+def get_repo_root():
+    from plumbum.cmd import git
+
+    repo_name = git("rev-parse", "--show-toplevel").split('/')[-1].strip()
+
+    rr = Path.cwd()
+
+    assert repo_name == 'java-modules' and (rr / 'levels').exists(), "Not in the java-modules repo"
+
+    return rr
+
+def build_dir(level, module=None):
+    rr = get_repo_root()
+
+    level = level.title()
+
+    if module is None:
+        return rr / '_build' / 'levels' / level
+    else:
+        module = module.title()
+        return rr / '_build' / 'modules' / level / module
+
