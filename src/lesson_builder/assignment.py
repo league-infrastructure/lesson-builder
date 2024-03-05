@@ -19,7 +19,7 @@ def get_resource_references(dir_, text):
 
     # get the files names for images references in html style
     # images, <img src="path" alt="alt text">
-    html_images = re.findall(r'<img src="(.*)"', text)
+    html_images = re.findall(r'<img src="([^"]+)"', text)
 
     r = md_images + html_images
 
