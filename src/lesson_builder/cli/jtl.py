@@ -23,13 +23,13 @@ from watchdog.observers import Observer
 from lesson_builder.buildlevels import make_lessons
 from lesson_builder.config import assignment_template_url, lesson_template_url
 from lesson_builder.jmod.git import clone_or_pull_repo, new_vuepress
+from lesson_builder.jmod.git import create_repo
 from lesson_builder.jmod.git import logger as git_logger
 from lesson_builder.jmod.tasks import update_meta
 from lesson_builder.lesson import logger as lesson_logger
 from lesson_builder.lesson_plan import LessonPlan
 from lesson_builder.util import download_and_extract_zip, find_file_path, get_repo_root, build_dir
 from lesson_builder.util import logger
-from lesson_builder.jmod.git import create_repo
 
 show_exceptions = False
 
@@ -111,9 +111,11 @@ def check_dirs(lesson_path: str = None, docs_path=None, assignments_path=None):
               help='Set the basedir for the url, often needed '
                    'for Github pages. Defaults to name of repository. Use "/" for root.')
 @click.option('-Y', '--yarn-build', is_flag=True, default=False, help='Also run Yarn Build')
+@click.option('-D', '--yarn-dev', is_flag=True, default=False,
+              help='Also run Yarn Dev server. Incompatible with --yarn-build')
 @click.option('-w', '--watch', is_flag=True, default=False, help='Rebuild when source files change')
 def build(lesson_path: str = None, docs_path=None, assignments_path=None,
-          url_base=None, yarn_build=False, watch=False):
+          url_base=None, yarn_build=False, yarn_dev=False, watch=False):
     """Build the website from the lesson plan
 
     Args:
@@ -136,7 +138,7 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
     lp.update_config(basedir=url_base)
     lp.build(url_base_dir=url_base)
 
-    if yarn_build:
+    if yarn_build or yarn_dev:
         with local.cwd(docs_path):
             yarn['build'] & FG
 
@@ -145,8 +147,11 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
     if watch:
 
         class RebuildHandler(FileSystemEventHandler):
+
             def on_any_event(self, event):
+
                 if not event.src_path.endswith('~') and Path(event.src_path).is_file():
+                    logger.info(f"Got file change event: {Path(event.src_path)}")
                     lp = LessonPlan(lesson_path, docs_path, assignments_path, less_subdir='lessons')
 
                     try:
@@ -347,9 +352,6 @@ def new_assignment(name: str, dir: bool = False, force: bool = False):
         Path(slug).with_suffix('.md').write_text(t)
 
 
-
-
-
 @main.group(help='manage java modules repos and websites')
 def java():
     pass
@@ -368,7 +370,7 @@ def jweb(level: str, org: str):
 
     bd = build_dir(level)
 
-    clone_or_pull_repo(org, level, bd )
+    clone_or_pull_repo(org, level, bd)
 
     ld = bd / 'docs'
 
@@ -380,16 +382,14 @@ def jweb(level: str, org: str):
             yarn('install')
 
 
-
 @java.command(name='push', help='Push modules to repos. Depends on meta.yaml, so make sure it is updated first')
 @click.option('-l', '--level', default=None, help="Push all modules from this level")
-@click.option('-m', '--module', default = None, help="With --level, push use this module")
+@click.option('-m', '--module', default=None, help="With --level, push use this module")
 @click.option('-o', '--org', default='League-Java', help="Org or owner of the repo")
 def jpush(level, module, org="League-Java"):
-
     meta = yaml.safe_load(Path(get_repo_root() / 'meta.yaml').read_text())
 
-    assert not( module and not level), "If module is specified, must also specify level"
+    assert not (module and not level), "If module is specified, must also specify level"
 
     level_glob = level if level else '*'
     mod_glob = module if module and level else '*'
@@ -403,6 +403,7 @@ def jpush(level, module, org="League-Java"):
 
     for m in mods:
         create_repo(m, org, build_dir)
+
 
 @java.command(name='meta', help='Regenerate meta.yaml')
 @click.option('-l', '--level_dir', default='levels', help="Root directory to levels")

@@ -5,6 +5,7 @@ import tempfile
 import shutil
 import zipfile
 import os
+import inspect
 
 import yaml
 
@@ -67,6 +68,13 @@ def find_file_path(directory, filename):
 class ResourceWrite:
     source: Path | str | bytes
     dest: Path
+    file: str = None
+    line: int = None
+
+
+    def __post_init__(self):
+        if isinstance(self.source, Path):
+            assert self.source.exists(), f"Source file {self.source} does not exist"
 
     @property
     def is_render(self):
@@ -111,7 +119,7 @@ class ResourceWrite:
 
     def __str__(self):
         if isinstance(self.source, Path):
-            src = str(self.source)
+            src = self.source # str(self.source)
 
         elif isinstance(self.source, str):
             src = f"<{len(self.source)} bytes>"

@@ -26,14 +26,17 @@ TBD, but here is what a lesson plan directory looks like:
 
 Install the lesson plan program 
 
+Install vuepress, [see these instructions for details](https://vuepress.vuejs.org/guide/getting-started.html). 
+in this example, we will be using `yarn` rather than `npm` to install vuepress.
+
+If you are developing locally:
+
 ```bash 
 python -mvenv .venv
 source .venv/bin/activate
-pip install git+https://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
+pip install -e git+https://github.com/league-infrastructure/lesson-builder.git#egg=lesson-builder
 ```
 
-Install vuepress, [see these instructions for details](https://vuepress.vuejs.org/guide/getting-started.html). 
-in this example, we will be using `yarn` rather than `npm` to install vuepress.
 
 ### Prepare a lesson repo
 

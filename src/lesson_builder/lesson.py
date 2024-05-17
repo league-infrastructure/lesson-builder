@@ -147,7 +147,7 @@ class Lesson:
 
     @property
     def assignments(self):
-        for a in self.ld['assignments']:
+        for a in self.ld.get('assignments',[]):
 
             abs_dir = self.lesson_plan.asgn_dir / a
 

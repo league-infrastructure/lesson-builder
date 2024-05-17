@@ -71,13 +71,17 @@ class LessonPlan:
         config['description'] = lp['description']
 
         idx = self.less_plan_dir / 'index.md'
+
         fm = frontmatter.loads(idx.read_text())
+        changes = 0
+
         for k in ('tagline','actionText'):
-            if k in lp:
+            if k in lp and fm[k] != lp[k]:
+                changes += 1 # Track changes so build -w doesn't loop
                 fm[k] = lp[k]
 
-
-        idx.write_text(frontmatter.dumps(fm) )
+        if changes:
+            idx.write_text(frontmatter.dumps(fm) )
 
         if basedir:
             config['base'] = '/' + basedir.strip('/') + '/'
@@ -121,14 +125,18 @@ class LessonPlan:
 
     def write_dir(self):
         """Write the lesson plan to the root directory
-
         """
 
         # Write all of the files first
         for r in self.collect_writes():
             if not r.is_render:
                 logger.debug(f'Writing {r}')
-                r.write()
+                try:
+                    r.write()
+                except Exception as e:
+                    logger.error(f'Error writing {str(r)}: {e}')
+                    raise
+
 
         # Then do the renders
         for r in self.collect_writes():

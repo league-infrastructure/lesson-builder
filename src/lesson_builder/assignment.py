@@ -26,7 +26,7 @@ def get_resource_references(dir_, text):
     # Make the paths absolute to the assignment dir
     return [(dir_ / f).absolute() for f in r]
 
-    return
+
 
 
 def get_assignment(path):
@@ -38,6 +38,7 @@ def get_assignment(path):
         meta['texts'] = {}
         meta['resources'] = []
         meta['sources'] = []
+
 
     if path.is_file():
         text = path.read_text()
@@ -53,6 +54,12 @@ def get_assignment(path):
         meta['texts']['trinket'] = path
 
         meta['resources'] = get_resource_references(path.parent, text)
+
+        for f in list(path.parent.glob('*')):
+            if f.suffix in resource_extensions:
+                meta['resources'].append(f)
+
+        meta['resources'] = list(set(meta['resources']))
 
     elif path.is_dir():
         meta_path = path / '_assignment.yaml'
@@ -169,7 +176,11 @@ class Assignment:
 
         for f in list(ad['resources']) + list(ad['sources']):
             f = Path(f)
-            res.append(ResourceWrite(f, self.dest_dir / f.name))
+            try:
+                res.append(ResourceWrite(f, self.dest_dir / f.name))
+            except:
+                logger.error(f"Error in Assignment{self.path}")
+                raise
 
         r = self.render()
         if r:
