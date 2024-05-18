@@ -30,7 +30,7 @@ def display_button(text, color, url,icon_image):
     </div>""").strip()
 
 def display_link(text, color, url,icon_image):
-
+    """Display a colored box with a link to a URL."""
     return dedent(f"""
     <span style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; margin-right: 10px;">
     <a href="{url}" target="_blank"  style=" color: white; font-size: 14pt; align-items: center; gap: 10px;">
@@ -40,11 +40,11 @@ def display_link(text, color, url,icon_image):
     </span>""").strip()
 
 def javaref(level, module, lesson, asgn, dir):
+    """A view source button, which coes on each lesson"""
     p = dir.split('/src/')[-1].strip('/')
     dir_url = level_module_repo_src_tmpl.format(level=level, module=module, path=p)
 
     return display_link(f"View Source", "gray", dir_url, "github-mark.png")
-
 
 def reporef(level, module):
     repo_url = level_module_repo_tmpl.format(level=level, module=module)
@@ -55,8 +55,6 @@ def forkrepo(level, module):
     fork_url = level_module_repo_tmpl.format(level=level, module=module) + '/fork'
 
     return display_link(f"Fork {level}-{module}", "green", fork_url, "github-mark-white.png")
-
-
 
 def strip_frontmatter(markdown_text):
     """

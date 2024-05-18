@@ -102,6 +102,15 @@ def find_leaf_directories(root_dir):
     return leaf_directories
 
 
+def remove_leading_numbers(s):
+    """Strip '_' and leading numbers from a string"""
+    s = s.strip('_')
+
+    while s[0].isdigit():
+        s = s[1:]
+
+    return s
+
 def process_dir(repo_root, root, f):
     from .html import html_to_markdown
 
@@ -125,7 +134,7 @@ def process_dir(repo_root, root, f):
         a = ls
         assign = ls
     else:
-        assign = ls.strip('_') + '_' + a.strip('_')
+        assign = ls.strip('_')
 
     ls = ls.strip('_')
 

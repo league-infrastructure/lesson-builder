@@ -130,7 +130,6 @@ class LessonPlan:
     def write_dir(self):
         """Write the lesson plan to the root directory
         """
-
         # Write all of the files first
         for r in self.collect_writes():
             if not r.is_render:
@@ -140,7 +139,6 @@ class LessonPlan:
                 except Exception as e:
                     logger.error(f'Error writing {str(r)}: {e}')
                     raise
-
 
         # Then do the renders
         for r in self.collect_writes():

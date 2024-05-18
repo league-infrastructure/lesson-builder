@@ -6,7 +6,7 @@ import frontmatter
 import yaml
 
 from .util import logger
-
+from .render import javaref, forkrepo, reporef
 
 def add_after_h1(markdown_text, string_to_add):
     lines = markdown_text.split('\n')
@@ -81,7 +81,7 @@ def make_text(lv):
 
     o = f"""---\n{yaml.dump(first)}---\n{o}"""
 
-    o = add_after_h1(o, '\n{{ forkrepo(fm_level, fm_module) }}\n\n{{ reporef(fm_level, fm_module) }}\n\n')
+    #o = add_after_h1(o, '\n{{ forkrepo(fm_level, fm_module) }}\n\n{{ reporef(fm_level, fm_module) }}\n\n')
 
     return o
 
@@ -109,7 +109,7 @@ def copy_resources(dir_, lv):
                 logger.dubug(f"Resource {r} does not exist.")
 
 
-def make_lessons(repo_root, web_root, meta):
+def make_lessons(level, repo_root, web_root, meta):
     """Build the lessons directory for a java level"""
 
     ld = web_root / 'lessons'
@@ -132,7 +132,6 @@ def make_lessons(repo_root, web_root, meta):
 
         # The level readme, which goes on the main page of the website
         if mk == '_readme':
-
             # strip the first level one heading from mv
             t = ''
             for l in mv.strip().splitlines():
@@ -175,15 +174,8 @@ def make_lessons(repo_root, web_root, meta):
                 'assignments': []
             }
 
+        readme = mv.pop('_readme', None)
         for lk, lv in sorted(mv.items()):
-
-            if lk == '_readme':
-                dir_ = ld / mk / 'index.md'
-
-                dir_.parent.mkdir(parents=True, exist_ok=True)
-                dir_.write_text(lv)
-                print(f"!!! Writing {dir_}")
-                continue
 
             n_lessons += 1
 
@@ -205,6 +197,29 @@ def make_lessons(repo_root, web_root, meta):
 
             lessons[mk]['assignments'].append(str(dir_.relative_to(ld)))
             lessons[mk]['assignments'] = list(sorted(lessons[mk]['assignments']))
+
+
+        if not readme:
+            readme = "# " + mk.replace('_', ' ').title() + "\n\n"
+
+
+        # Write the module readme text, the intro to the module.
+        dir_ = ld / mk / 'index.md'
+        dir_.parent.mkdir(parents=True, exist_ok=True)
+
+        readme = add_after_h1(readme, '\n{{ forkrepo(fm_level, fm_module) }}\n\n{{ reporef(fm_level, fm_module) }}\n\n')
+
+        fm = {
+            "template": "readme.md",
+            "level": level,
+            "module": mk
+        }
+
+        readme = frontmatter.dumps(frontmatter.Post(readme, **fm))
+
+        dir_.write_text(readme)
+
+
 
     lp = yaml.safe_load((ld / 'lesson-plan.yaml').read_text())
 

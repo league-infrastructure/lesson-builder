@@ -171,6 +171,7 @@ class Assignment:
         ad = self.ass_data
 
         # Copy the source files
+
         for source in ad['sources']:
             res.append(ResourceWrite(source, self.dest_dir / source.name))
 

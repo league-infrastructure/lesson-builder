@@ -444,7 +444,7 @@ def jbuild(ctx, level, yarn_build=False, meta=False, watch=False):
     meta = meta[level]
 
     # Create the lesson data in the _build directory
-    make_lessons(r, web_root, meta)
+    make_lessons(level, r, web_root, meta)
 
     # Normal lesson-builder build out of the _build directory
     ctx.invoke(build, lesson_path=lesson_path, docs_path=docs_path,

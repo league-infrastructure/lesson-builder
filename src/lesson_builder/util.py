@@ -66,7 +66,10 @@ def find_file_path(directory, filename):
 
 @dataclass
 class ResourceWrite:
-    source: Path | str | bytes
+    """Represents a file that need to be copied, and possibly rendered, both
+    images and text"""
+
+    source: Path | str | bytes | dict
     dest: Path
     file: str = None
     line: int = None

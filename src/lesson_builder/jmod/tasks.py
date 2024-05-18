@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 
 from .git import create_repo
@@ -5,8 +7,8 @@ from .html import _proc_html
 from .util import *
 from .walk import *
 
-import logging
 logger = logging.getLogger('lesson-builder')
+
 
 def update_modules(repo_root, levels_root):
     """Update all of the module directories with settings files, scripts, etc. """
@@ -21,12 +23,14 @@ def update_modules(repo_root, levels_root):
         # copy_scripts(dir_)
         disable_eclipse(dir_)
 
+
 def push(repo_root, root, org, build_dir):
     """Upload the module in the current dir to Github"""
 
     for dir_ in walk_modules(root):
         create_repo(dir_, org, build_dir)
         # make_repo_template(dir_)
+
 
 def update_meta(repo_root, level_root):
     """Create the .meta files for the assignments, while hold information
@@ -37,17 +41,17 @@ def update_meta(repo_root, level_root):
     metas = []
 
     for l in walk_assignments(Path(level_root)):
-        java = list(l.glob('*.java'))
-        pde = list(l.glob('*.pde'))
-        web = (l / '.web').exists()
+        # java = list(l.glob('*.java'))
+        # pde = list(l.glob('*.pde'))
+        # web = (l / '.web').exists()
 
-        r = process_dir(repo_root,level_root, l)
+        r = process_dir(repo_root, level_root, l)
 
         if r:
             (l / '.meta').write_text(yaml.dump(r, indent=2))
             metas.append(r)
         else:
-            logger.debug("No meta ", l)
+            logger.debug("No meta "+str(l))
 
     metas = compile_meta(metas)
 
@@ -55,10 +59,8 @@ def update_meta(repo_root, level_root):
     ld = Path(level_root).absolute()
 
     for p in ld.glob('**/README.md'):
-        if '/src/' in str(p) or  '/bin/' in str(p):
+        if '/src/' in str(p) or '/bin/' in str(p):
             continue
-
-        print("!!!!", p)
 
         l, m = get_lm(p)
         if l and not m:
@@ -66,9 +68,13 @@ def update_meta(repo_root, level_root):
         elif l and m:
             metas[l][m]['_readme'] = p.read_text()
 
+    # Create missing readmes
+    for i, (mk, mv) in enumerate(sorted(metas.items())):
+
+        if not '_readme' in mv:
+            mv['_readme'] = f"# {mk}\n\n"
+
     (repo_root / 'meta.yaml').write_text(yaml.dump(metas, indent=2))
-
-
 
 
 def make_readme(root):
@@ -92,7 +98,6 @@ def make_readme(root):
         (f.parent / 'README.md').write_text(m['text'])
 
 
-
 def fetch_web(root):
     """Walk the levels looking for html files and download the assets
     HISTORIC, probably not needed anymore"""
@@ -106,4 +111,3 @@ def fetch_web(root):
             continue
 
         _proc_html(f)
-

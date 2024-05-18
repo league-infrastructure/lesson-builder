@@ -109,10 +109,21 @@ class Lesson:
         res = []
 
         if self.lesson_text_path is not None and self.lesson_text_path.exists():
-            res.append(ResourceWrite(self.lesson_text_path, self.dest_dir / 'index.md'))
+
+            fm = frontmatter.loads(self.lesson_text_path.read_text())
+            if 'template' in fm.metadata:
+                md = dict(template_name=fm.metadata['template'],
+                          frontmatter=fm.metadata,
+                          working_directory=self.dest_dir,
+                          content=self.lesson_text_path.read_text())
+
+                res.append(ResourceWrite(md, self.dest_dir / 'index.md'))
+            else:
+                res.append(ResourceWrite(self.lesson_text_path, self.dest_dir / 'index.md'))
 
         # Copy images and other assets
         for resource in self.ld.get('resources', []):
+
             res.append(ResourceWrite(self.lesson_plan.assets_src_dir / resource, self.dest_dir / resource))
 
         for a in self.assignments:
