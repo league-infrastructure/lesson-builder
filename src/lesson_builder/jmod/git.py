@@ -30,7 +30,7 @@ def clone_or_pull_repo(org: str, repo: str, dest: str | Path):
 
     if not (dest / repo).exists():
         with local.cwd(dest):
-            gh("repo", "clone", f"{org}/{repo}")
+            gh("repo", "clone", f"{org}/{repo}", dest)
             logger.info(f"Cloned {org}/{repo} to {dest}")
 
     else:
