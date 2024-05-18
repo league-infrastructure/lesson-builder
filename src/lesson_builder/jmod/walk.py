@@ -174,7 +174,7 @@ def walk_assignments(root):
     for f in root.glob('**/*'):
         p = f.parent
 
-        if p.name in ('.web', 'lib', 'league_token', 'tests'):
+        if p.name in ('.web', 'lib', 'league_token', 'tests', 'bin'):
             continue
 
         java = list(p.glob('*.java'))

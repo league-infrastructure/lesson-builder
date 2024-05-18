@@ -76,9 +76,13 @@ class LessonPlan:
         changes = 0
 
         for k in ('tagline','actionText'):
-            if k in lp and fm[k] != lp[k]:
-                changes += 1 # Track changes so build -w doesn't loop
-                fm[k] = lp[k]
+            try:
+                if k in lp and fm[k] != lp[k]:
+                    changes += 1 # Track changes so build -w doesn't loop
+                    fm[k] = lp[k]
+            except KeyError:
+                logger.error(f'Missing key {k} in {idx}')
+                raise
 
         if changes:
             idx.write_text(frontmatter.dumps(fm) )

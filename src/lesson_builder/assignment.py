@@ -164,6 +164,8 @@ class Assignment:
 
     def collect_writes(self):
 
+        from pprint import pprint
+
         res = []
 
         ad = self.ass_data

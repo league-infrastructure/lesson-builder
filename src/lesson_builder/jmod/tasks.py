@@ -5,7 +5,8 @@ from .html import _proc_html
 from .util import *
 from .walk import *
 
-
+import logging
+logger = logging.getLogger('lesson-builder')
 
 def update_modules(repo_root, levels_root):
     """Update all of the module directories with settings files, scripts, etc. """
@@ -46,7 +47,7 @@ def update_meta(repo_root, level_root):
             (l / '.meta').write_text(yaml.dump(r, indent=2))
             metas.append(r)
         else:
-            print("No meta ", l)
+            logger.debug("No meta ", l)
 
     metas = compile_meta(metas)
 
@@ -54,8 +55,10 @@ def update_meta(repo_root, level_root):
     ld = Path(level_root).absolute()
 
     for p in ld.glob('**/README.md'):
-        if '/src/' in str(p):
+        if '/src/' in str(p) or  '/bin/' in str(p):
             continue
+
+        print("!!!!", p)
 
         l, m = get_lm(p)
         if l and not m:

@@ -39,6 +39,7 @@ def indent_headings(meta, t):
 
     return '\n'.join(lines)
 
+
 def add_javaref(meta, t):
     lines = []
 
@@ -59,9 +60,6 @@ def add_javaref(meta, t):
 
 def make_text(lv):
     first = dict(**lv[0])
-
-    if 'snake' in first['text'].lower():
-        print("SNAKE", len(lv))
 
     if len(lv) == 1:
         o = add_javaref(first, first['text'])
@@ -125,10 +123,48 @@ def make_lessons(repo_root, web_root, meta):
 
     n_modules = 0
     n_lessons = 0
+    first_key = None
 
-    for mk, mv in sorted(meta.items()):
+    for i, (mk, mv) in enumerate(sorted(meta.items())):
 
-        if mk.startswith('_'):
+        if i == 0:
+            first_key = mk
+
+        # The level readme, which goes on the main page of the website
+        if mk == '_readme':
+
+            # strip the first level one heading from mv
+            t = ''
+            for l in mv.strip().splitlines():
+                if l.startswith('# '):
+                    continue
+                t += l + '\n'
+
+            f = ld / 'index.md'
+            f.parent.mkdir(parents=True, exist_ok=True)
+
+            if f.exists():
+                post = frontmatter.loads(f.read_text())
+                fm = post.metadata
+            else:
+
+                fm = {
+                    "actionText": "Get Started!",
+                    "heroImage": "/assets/word-logo.png",
+                    "home": True,
+                    "tagline": "Igniting Young Minds Through Programming"
+                }
+
+            fm["actionLink"] = f"/lessons/{first_key}/"
+
+            # Create a new frontmatter post
+            post = frontmatter.Post(t, **fm)
+
+            # Output the combined content with frontmatter
+            t = frontmatter.dumps(post)
+
+            f.write_text(t)
+
             continue
 
         n_modules += 1
@@ -141,11 +177,12 @@ def make_lessons(repo_root, web_root, meta):
 
         for lk, lv in sorted(mv.items()):
 
-            if lk.startswith('_'):
-                dir_ = ld / mk / 'index.html'
+            if lk == '_readme':
+                dir_ = ld / mk / 'index.md'
 
                 dir_.parent.mkdir(parents=True, exist_ok=True)
                 dir_.write_text(lv)
+                print(f"!!! Writing {dir_}")
                 continue
 
             n_lessons += 1
@@ -161,7 +198,6 @@ def make_lessons(repo_root, web_root, meta):
             (dir_ / 'index.md').write_text(text)
 
             fm = dict(frontmatter.loads(text))
-
 
             copy_resources(dir_, lv)
 

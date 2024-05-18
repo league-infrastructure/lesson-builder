@@ -423,10 +423,12 @@ def jserve(ctx, level):
 
 @java.command(name='build', help='Build the lesson website for a level')
 @click.option('-l', '--level', help="Name of the level to serve")
+@click.option('-m', '--meta', is_flag=True, default=False, help='Regenerate meta.yaml before the build')
 @click.option('-Y', '--yarn-build', is_flag=True, default=False, help='Also run Yarn Build')
 @click.option('-w', '--watch', is_flag=True, default=False, help='Rebuild when source files change')
+
 @click.pass_context
-def jbuild(ctx, level, yarn_build=False, watch=False):
+def jbuild(ctx, level, yarn_build=False, meta=False, watch=False):
     r = get_repo_root()
 
     level = level.title()
@@ -435,11 +437,16 @@ def jbuild(ctx, level, yarn_build=False, watch=False):
     docs_path = web_root / 'docs'
     lesson_path = web_root / 'lessons'
 
+    if meta:
+        update_meta(get_repo_root(), 'levels')
+
     meta = yaml.safe_load(Path(r / 'meta.yaml').read_text())
     meta = meta[level]
 
+    # Create the lesson data in the _build directory
     make_lessons(r, web_root, meta)
 
+    # Normal lesson-builder build out of the _build directory
     ctx.invoke(build, lesson_path=lesson_path, docs_path=docs_path,
                url_base=level, yarn_build=yarn_build, watch=watch)
 
