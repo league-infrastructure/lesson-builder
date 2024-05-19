@@ -29,7 +29,7 @@ def display_button(text, color, url,icon_image):
     </a>
     </div>""").strip()
 
-def display_link(text, color, url,icon_image):
+def button_link(text, color, url, icon_image):
     """Display a colored box with a link to a URL."""
     return dedent(f"""
     <span style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; margin-right: 10px;">
@@ -39,22 +39,27 @@ def display_link(text, color, url,icon_image):
     </a>
     </span>""").strip()
 
+def simple_link(text, color, url,icon_image):
+    """Display a sikmple link with an icon."""
+    return (f"<a href=\"{url}\" target=\"_blank\"><img :src=\"$withBase('/assets/{icon_image}')\" alt=\"{text}\" "
+            f"style=\"width:20px; vertical-align: middle;\"> {text}</a>")
+
 def javaref(level, module, lesson, asgn, dir):
     """A view source button, which coes on each lesson"""
     p = dir.split('/src/')[-1].strip('/')
     dir_url = level_module_repo_src_tmpl.format(level=level, module=module, path=p)
 
-    return display_link(f"View Source", "gray", dir_url, "github-mark.png")
+    return simple_link(f"View Source", "gray", dir_url, "github-mark.png")
 
 def reporef(level, module):
     repo_url = level_module_repo_tmpl.format(level=level, module=module)
 
-    return display_link(f"View {level}-{module}", "blue", repo_url, "github-mark-white.png")
+    return button_link(f"View {level}-{module}", "blue", repo_url, "github-mark-white.png")
 
 def forkrepo(level, module):
     fork_url = level_module_repo_tmpl.format(level=level, module=module) + '/fork'
 
-    return display_link(f"Fork {level}-{module}", "green", fork_url, "github-mark-white.png")
+    return button_link(f"Fork {level}-{module}", "green", fork_url, "github-mark-white.png")
 
 def strip_frontmatter(markdown_text):
     """
