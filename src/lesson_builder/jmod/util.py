@@ -308,11 +308,11 @@ def download_webpage_assets(url_or_text, save_dir):
     # Save the modified HTML file
     html_save_path = os.path.join(save_dir, 'index.html')
     with open(html_save_path, 'w', encoding='utf-8') as html_file:
-        html_file.write(html_content)
+        html_filcompilee.write(html_content)
         print(f'HTML saved to {html_save_path}')
 
 def compile_meta(metas):
-    """Reorganize metadata in a heirarchy"""
+    """Reorganize assignment metadata in a heirarchy"""
     levels = {}
 
     for meta in metas:
@@ -326,9 +326,13 @@ def compile_meta(metas):
             levels[l][m] = {}
 
         if ls not in levels[l][m]:
-            levels[l][m][ls] = []
+            levels[l][m][ls] = {
+                'assignments': [],
+                '_readme': ''
+            }
 
-        levels[l][m][ls].append(meta)
+
+        levels[l][m][ls]['assignments'].append(meta)
 
     return levels
 

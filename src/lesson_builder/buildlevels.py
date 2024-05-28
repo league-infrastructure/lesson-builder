@@ -31,7 +31,7 @@ def indent_headings(meta, t):
             l = "#" + l  # Bump all the headings up one level.
 
             if not found_first:
-                l += "\n\n{{ javaref(fm_level, fm_module,fm_lesson,fm_assignment, fm_dir) }}\n"
+                l += f"\n\n{{{{ javaref(fm_level, fm_module,fm_lesson,fm_assignment,\"{meta['opath']}\") }}}}\n"
 
             found_first = True
 
@@ -59,16 +59,32 @@ def add_javaref(meta, t):
 
 
 def make_text(lv):
-    first = dict(**lv[0])
+    """Create the text for a lesson from the metadata"""
 
-    if len(lv) == 1:
-        o = add_javaref(first, first['text'])
+    assignments = lv['assignments']
+
+    lesson_text = lv['_readme']
+
+    first = dict(**assignments[0])
+
+    if len(assignments) == 1:
+        # In this case, the lesson text should be the same as the
+        # text of the first assignment, if the  single assignment is in the
+        # root of the lesson, but there can also be only one assignment subdirectory
+        # in the lesson.
+
+        if lesson_text.strip() == first['text'].strip():
+            o = add_javaref(first, first['text'])
+        else:
+            o = lesson_text + '\n\n' + add_javaref(first, first['text'])
     else:
-        title = first['lesson'].replace('_', ' ').title()
+        if lesson_text:
+            o = lesson_text+'\n\n'
+        else:
+            title = first['lesson'].replace('_', ' ').title()
+            o = f"# {title}\n\n"
 
-        o = f"# {title}\n\n"
-
-        for a in lv:
+        for a in assignments:
             o += indent_headings(a, a['text'])
 
     # Find all html images tags  of the form './images/<name>'
@@ -87,7 +103,10 @@ def make_text(lv):
 
 
 def copy_resources(dir_, lv):
-    for v in lv:
+
+    assignments = lv['assignments']
+
+    for v in assignments:
 
         if not 'resources' in v:
             logger.debug(f"No resources in {v['assignment']}")
@@ -117,7 +136,6 @@ def make_lessons(level, repo_root, web_root, meta):
     ld.mkdir(parents=True, exist_ok=True)
 
     lessons = {}
-
     # Meta should already be restricted to one level,
     # so we can just iterate over the modules and lessons.
 
@@ -207,7 +225,11 @@ def make_lessons(level, repo_root, web_root, meta):
         dir_ = ld / mk / 'index.md'
         dir_.parent.mkdir(parents=True, exist_ok=True)
 
-        readme = add_after_h1(readme, '\n{{ forkrepo(fm_level, fm_module) }}\n\n{{ reporef(fm_level, fm_module) }}\n\n')
+        readme = add_after_h1(readme,
+                               '\n{{ open_codespaces(fm_level, fm_module) }}\n\n'
+                               '{{ forkrepo(fm_level, fm_module) }}\n\n'
+                              '{{ reporef(fm_level, fm_module) }}\n\n'
+                              )
 
         fm = {
             "template": "readme.md",

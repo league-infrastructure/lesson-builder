@@ -5,7 +5,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 import frontmatter
 import lesson_builder.templates as tmpl
-from lesson_builder.config import level_module_repo_src_tmpl, level_module_repo_tmpl
+from lesson_builder.config import level_module_repo_src_tmpl, level_module_repo_tmpl, level_module_codespaces_tmpl
 from .trinket import read_code, trinket, goal_image
 from textwrap import dedent
 
@@ -32,8 +32,8 @@ def display_button(text, color, url,icon_image):
 def button_link(text, color, url, icon_image):
     """Display a colored box with a link to a URL."""
     return dedent(f"""
-    <span style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; margin-right: 10px;">
-    <a href="{url}" target="_blank"  style=" color: white; font-size: 14pt; align-items: center; gap: 10px;">
+    <span style="background-color: {color}; padding: 10px 24px; margin-bottom:10px; margin-right: 7px;">
+    <a href="{url}" target="_blank"  style=" color: white; font-size: 12pt; align-items: center; gap: 7px;">
     <img :src="$withBase('/assets/{icon_image}')" alt="{text}" style="width:20px; vertical-align: middle;">
     {text}
     </a>
@@ -50,6 +50,13 @@ def javaref(level, module, lesson, asgn, dir):
     dir_url = level_module_repo_src_tmpl.format(level=level, module=module, path=p)
 
     return simple_link(f"View Source", "gray", dir_url, "github-mark.png")
+
+def open_codespaces(level, module):
+    """A link to open the module in codespaces"""
+
+    dir_url = level_module_codespaces_tmpl.format(level=level, module=module)
+
+    return button_link(f"Open in Codespaces", "orange", dir_url, "github-mark-white.png")
 
 def reporef(level, module):
     repo_url = level_module_repo_tmpl.format(level=level, module=module)
@@ -93,10 +100,12 @@ def render(template_name, *args, **kwargs):
     env.globals['trinket'] = trinket
     env.globals['goal_image'] = goal_image
     env.globals['javaref'] = javaref
+    env.globals['open_codespaces'] = open_codespaces
     env.globals['forkrepo'] = forkrepo
     env.globals['reporef'] = reporef
     env.globals['read_code'] = read_code
     env.filters['yaml'] = dict_to_yaml
+
 
     if 'content' in kwargs:
 

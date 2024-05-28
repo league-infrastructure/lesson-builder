@@ -410,7 +410,6 @@ def jpush(level, module, org="League-Java"):
 def jmeta(level_dir='levels'):
     update_meta(get_repo_root(), level_dir)
 
-
 @java.command(name='serve', help='Development server for a level website')
 @click.option('-l', '--level', help="Name of the level to serve")
 @click.pass_context
@@ -419,7 +418,6 @@ def jserve(ctx, level):
     docs_path = build_dir(level) / 'docs'
 
     ctx.invoke(serve, docs_path=docs_path)
-
 
 @java.command(name='build', help='Build the lesson website for a level')
 @click.option('-l', '--level', help="Name of the level to serve")

@@ -38,8 +38,11 @@ def update_meta(repo_root, level_root):
 
     import yaml
 
-    metas = []
+    asgn_metas = []
 
+    # Read the meta for the assignments. This will
+    # get READMEs for the assignments and put it in to the
+    # 'text' key in the metadata
     for l in walk_assignments(Path(level_root)):
         # java = list(l.glob('*.java'))
         # pde = list(l.glob('*.pde'))
@@ -49,11 +52,11 @@ def update_meta(repo_root, level_root):
 
         if r:
             (l / '.meta').write_text(yaml.dump(r, indent=2))
-            metas.append(r)
+            asgn_metas.append(r)
         else:
-            logger.debug("No meta "+str(l))
+            logger.debug("No meta " + str(l))
 
-    metas = compile_meta(metas)
+    metas = compile_meta(asgn_metas)
 
     # Add in readmes for levels and modules
     ld = Path(level_root).absolute()
@@ -67,6 +70,26 @@ def update_meta(repo_root, level_root):
             metas[l]['_readme'] = p.read_text()
         elif l and m:
             metas[l][m]['_readme'] = p.read_text()
+        else:
+            print(f"Could not find level or module for {p}")
+
+
+    # Readmes for lessons, which are the parent directories of the
+    # assignments
+    for p in ld.glob('**/README.md'):
+        if '/src/' not in str(p) or '/bin/' in str(p):
+            continue
+
+        l, m, ls, a = get_lmla(p)
+        if a == 'README.md':
+            try:
+                metas[l][m][ls.strip('_')]['_readme'] = p.read_text()
+            except KeyError:
+                assert '99' in ls, f"Could not find {l} {m} {ls} in metas"
+                # This happens for 99_extras, which don't have any metadata
+                #print(metas[l][m].keys(), f"Could not find {l} {m} {ls} in metas")
+                pass
+
 
     # Create missing readmes
     for i, (mk, mv) in enumerate(sorted(metas.items())):

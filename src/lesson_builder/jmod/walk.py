@@ -141,6 +141,7 @@ def process_dir(repo_root, root, f):
     title = assign.replace('_', ' ').title()
 
     web_dir = (f / '.web')
+    images_dir = (f / 'images')
 
     readme = f / 'README.md'
 
@@ -166,11 +167,21 @@ def process_dir(repo_root, root, f):
         'text': md
     }
 
+    resource_names = set()
     resources = []
     if web_dir.exists():
         for e in web_dir.iterdir():
             if e.is_file() and e.suffix in resource_extensions:
                 resources.append(str(e))
+                resource_names.add(e.name)
+
+    # Also load the images, but only if they are not already in the resources
+    if images_dir.exists():
+        for e in images_dir.iterdir():
+            if e.is_file() and e.suffix in resource_extensions and e.name not in resource_names:
+                resources.append(str(e))
+
+
 
     r['resources'] = resources
 

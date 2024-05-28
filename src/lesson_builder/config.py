@@ -8,6 +8,8 @@ example_config = 'https://github.com/league-curriculum/Visual-Python/blob/main/a
 level_module_repo_tmpl = "https://github.com/League-Java/{level}-{module}"
 level_module_repo_src_tmpl = level_module_repo_tmpl+"/tree/master/src/{path}/"
 
+level_module_codespaces_tmpl = "https://codespaces.new/League-Java/{level}-{module}"
+
 site_template_url = 'https://github.com/league-curriculum/New_Curriculum_Template.git'
 
 resource_extensions = ('.png', '.gif', '.jpeg', '.jpg')
