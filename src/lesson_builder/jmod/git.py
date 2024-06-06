@@ -102,5 +102,7 @@ def create_repo(dir_: str | Path, org: str, build_dir: str | Path):
             logger.info(f"    Add remote origin {url}")
             git("remote", "add", "origin", url)
 
+        # NOTE THE -f!
+        # We are over writting the target repo
         logger.info("    Push")
         git("push", "-f", "--set-upstream", "origin", "master")

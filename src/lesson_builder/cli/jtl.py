@@ -26,6 +26,8 @@ from lesson_builder.jmod.git import clone_or_pull_repo, new_vuepress
 from lesson_builder.jmod.git import create_repo
 from lesson_builder.jmod.git import logger as git_logger
 from lesson_builder.jmod.tasks import update_meta
+from lesson_builder.jmod.util import copy_devcontainer
+from lesson_builder.jmod.walk import walk_modules
 from lesson_builder.lesson import logger as lesson_logger
 from lesson_builder.lesson_plan import LessonPlan
 from lesson_builder.util import download_and_extract_zip, find_file_path, get_repo_root, build_dir
@@ -39,7 +41,10 @@ show_exceptions = False
 @click.option('-vv', '--debug', is_flag=True, show_default=True, default=False, help="DEBUG logging")
 @click.option('-E', '--exceptions', is_flag=True, show_default=True, default=False,
               help="Display exception stack traces")
-def main(verbose: bool, debug: bool, exceptions: bool):
+def main(verbose: bool, debug: bool,  exceptions: bool):
+
+
+
     if debug:
         logging.basicConfig()
         logger.setLevel(logging.DEBUG)
@@ -180,10 +185,35 @@ def build(lesson_path: str = None, docs_path=None, assignments_path=None,
         print("Built to ", dist)
 
 
-@main.command(help="Print configuration (tbd)")
+@main.command(help="Print configuration, exec path and version")
 def config():
     from lesson_builder import __version__
     print(f"Lesson Builder version {__version__}")
+    print(f"Executable path: {shutil.which('jtl')}")
+    exit(0)
+
+
+
+@click.option('-d', '--devcontainer', is_flag=True, show_default=True, default=False, help="Update devcontainer config")
+@main.command(help="Update various components")
+def update(devcontainer: bool, root_path=None, levels_root='levels'):
+
+    if root_path is None:
+        root_path = Path.cwd()
+    else:
+        root_path = Path(root_path)
+
+    if devcontainer:
+
+        for dir_ in walk_modules(levels_root):
+            print('=== Copy devcontainer config to ', dir_)
+            copy_devcontainer(root_path, dir_)
+
+        print("Update devcontainer")
+    else:
+        # error and exit
+        print("No update option specified")
+        exit(1)
 
 
 @main.command(help="Creates and configures a new vewpress docs dir")

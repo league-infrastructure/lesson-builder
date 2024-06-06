@@ -181,7 +181,6 @@ def make_dirs(dir_):
             p.mkdir()
             (p/".keep").touch()
 
-
 def copy_devcontainer(repo_root, dir_):
     """Copy the devcontainer file from the root into the module"""
     source = repo_root/'.devcontainer'
