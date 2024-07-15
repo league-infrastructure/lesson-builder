@@ -29,6 +29,13 @@ Install the lesson plan program
 Install vuepress, [see these instructions for details](https://vuepress.vuejs.org/guide/getting-started.html). 
 in this example, we will be using `yarn` rather than `npm` to install vuepress.
 
+If you just want to build lessons, first [install pipx](https://pipx.pypa.io/latest/installation/) then install
+`lesson-builder` with pipx:
+
+```bash
+pipx install git+https://github.com/league-infrastructure/lesson-builder.git
+```
+
 If you are developing locally:
 
 ```bash 
